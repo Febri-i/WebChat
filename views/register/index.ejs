@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="/register/style.css" />
+    <title>Login</title>
+    <script type="text/javascript">
+      const prev = <%- JSON.stringify(emails || null) %>
+    </script>
+  </head>
+  <body>
+    <main>
+      <form class="loginForm">
+        <span class="loginText">Register</span>
+        <label for="usrnam" class="usrnam" autocomplete="off">Username</label>
+        <input type="text" name="username" id="usrnam" />
+        <label for="email" class="email">Email</label>
+        <input type="email" name="email" id="email" />
+        <label for="passw" class="passw">Password</label>
+        <input type="password" name="password" id="passw" />
+        <button type="submit" class="sub" name="button">Register</button>
+      </form>
+      <form class="verifForm" method="post">
+        <span class="loginText">Check your email!</span>
+        <label for="verify" class="verify">Verify code</label>
+        <input type="password" name="verifyCode" id="verify" />
+        <button type="submit" class="mit" name="button">Verify account</button>
+      </form>
+    </main>
+  </body>
+  <script type="text/javascript" src="/register/script.js"></script>
+</html>

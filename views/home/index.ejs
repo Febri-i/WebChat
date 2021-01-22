@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>febriCH</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<script src="/socket.io/socket.io.js">
+</script>
+<script type="text/javascript">
+  const event = "<%= event %>"
+  const id = <%- JSON.stringify(data.accountId) %>
+  const groupChat = <%- JSON.stringify(data.groupChat) %>
+  const contacts = <%- JSON.stringify(data.contacts) %>
+  const chatAss = <%- JSON.stringify(data.chat) %>
+</script>
+<body>
+  <aside>
+    <img src="./img/light/person-black-36dp.svg" alt="Profile" class="profileIcon" />
+    <img src="./img/light/chat-black-36dp.svg" alt="Chat" class="chatIcon" />
+    <img src="./img/light/group-black-36dp.svg" alt="Group Chat" class="groupchatIcon" />
+    <img src="./img/light/contacts-black-36dp.svg" alt="Contact" class="contactIcon" />
+    <img src="./img/light/settings-black-36dp.svg" alt="Setting" class="setting" />
+  </aside>
+  <section>
+
+  </section>
+  <main></main>
+</body>
+<script type="text/javascript">
+const main = document.querySelector("main"),
+    section = document.querySelector("section");
+</script>
+<script src="./template.js" type="text/javascript"></script>
+<script type="text/javascript" src="./function.js"></script>
+<script type="text/javascript" src="./aside/chat.js"></script>
+<script type="text/javascript" src="./aside/contact.js"></script>
+<script type="text/javascript" src="./aside/groupChat.js"></script>
+<script type="text/javascript" src="./aside/profile.js"></script>
+<script type="text/javascript" src="./script.js"></script>
+
+</html>

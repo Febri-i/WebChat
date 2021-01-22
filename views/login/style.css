@@ -1,0 +1,85 @@
+* {
+  padding: 0;
+  margin: 0;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: poppinMedium;
+  src: url(./font/Poppins-Medium.ttf);
+}
+
+@font-face {
+  font-family: poppinRegular;
+  src: url(./font/Poppins-Regular.ttf);
+}
+
+.loginText {
+  font-family: poppinMedium;
+  font-weight: bold;
+  margin: auto;
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
+  width: fit-content;
+  height: -webkit-fit-content;
+  height: -moz-fit-content;
+  height: fit-content;
+  font-size: xx-large;
+}
+
+.loginForm {
+  font-family: poppinRegular;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  width: 300px;
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.loginForm label {
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 2px;
+  margin-top: 8px;
+  position: relative;
+  top: 22.38px;
+  left: 5px;
+  font-size: 16.5px;
+  outline: none;
+  -webkit-transition: 0.3s;
+  -o-transition: 0.3s;
+  transition: 0.3s;
+}
+
+.loginForm input {
+  padding: 0px 0px 3px 5px;
+  letter-spacing: 1.1px;
+  font-size: 16.5px;
+  background-color: rgba(0, 0, 0, 0);
+  outline: none;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
+}
+
+.loginForm button {
+  margin-top: 20px;
+  background-color: dodgerblue;
+  border: none;
+  color: white;
+  height: 30px;
+  font-family: poppinRegular;
+  border-radius: 90vh;
+}
