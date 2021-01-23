@@ -53,9 +53,6 @@ function showContactProfile(id, e) {
         <span class="addContactAlertNo">No</span>
       </span>
     </div>`
-  } else {
-    document.querySelector('.changeContactUseraname').style.display = 'flex';
-    document.querySelector('.changeUsrNamInpt').style.display = 'flex';
   }
 }
 
@@ -90,33 +87,36 @@ function instantContact(id) {
   summonAddContactForm();
 }
 
-async function changeUsername(lol) {
-  const usrInput = document.querySelector('.changeUsrNamInpt').value
-  let success = {};
-  if (usrInput) success = await fetch('/chcontact', {
-    method: 'post',
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      self: false,
-      username: usrInput,
-      accountId: lol.dataset.id
-    })
-  }).then(res => res.json())
+function changeUsrnam() {
+  document.querySelector('.inputer').style.transform = "translateY(0)";
+  document.querySelector('.usrnamrss').style.transform = "translateY(105%)"
+};
 
-  if (success.success) document.querySelector('.profileusrname').innerText = usrInput;
-  document.querySelector('.changeUsrNamInpt').style.transform = 'translateY(-150%)'
-  document.querySelector('.profileusrname').style.transform = 'translateY(0)'
-  document.querySelector('.changeContactUseraname').style.transform = 'translateY(0)'
-  document.querySelector('.acceptUsernameChange').style.transform = 'translateY(150%)'
-  document.querySelector('.changeUsrNamInpt').value = '';
-}
+async function changeNam(lol) {
+  let success = {
+    success: false
+  };
+  let usrInput = document.querySelector('.inpt').value;
+  if (usrInput.length)
+    success = await fetch('/chcontact', {
+      method: 'post',
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        self: false,
+        username: usrInput,
+        accountId: lol.dataset.id
+      })
+    }).then(res => success = res.json())
 
-function showUsernamInput(lol) {
-  document.querySelector('.changeUsrNamInpt').style.transform = 'translateY(0)'
-  document.querySelector('.profileusrname').style.transform = 'translateY(150%)'
-  lol.style.transform = 'translateY(-150%)'
-  document.querySelector('.acceptUsernameChange').style.transform = 'translateY(0)'
+  if (success.success) {
+    document.querySelector('.usernamess').innerText = usrInput;
+    const usrnam = document.querySelector('.username');
+    if (usrnam && usrnam.innerText !== usrInput) document.querySelector('.username').innerText = usrInput
+    document.querySelector('.inpt').value = '';
+  }
+  document.querySelector('.usrnamrss').style.transform = "translateY(0)";
+  document.querySelector('.inputer').style.transform = "translateY(-105%)"
 }

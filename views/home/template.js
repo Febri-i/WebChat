@@ -84,22 +84,22 @@ function createProfile(id, username, date) {
 function contactProfile(id) {
   return `<div class="mainProfile">
   <img src="./pp/profile.jpeg" class="aclPhotoProfile" alt="Photo Profile">
-  <div class="usernameAndChange" >
-    <div class="CinputContainer" >
-      <span class="profileusrname">${getUsrName(id)}</span>
-      <input class="changeUsrNamInpt" >
+
+  <div class="container">
+    <div class="usrnamrss">
+      <span class="usernamess">${getUsrName(id)}</span>
+      <img src="./img/light/edit-white-18dp.svg" style="cursor: pointer" onclick="changeUsrnam()">
     </div>
-    <div class="changeUsernameIcon">
-    <img src="./img/dark/edit-white-18dp.svg" onclick="showUsernamInput(this)" class="changeContactUseraname" >
-    <img src="./img/light/done-white-18dp.svg" onclick="changeUsername(this)" data-id="${id}" class="acceptUsernameChange" >
+    <div class="inputer">
+      <input class="inpt" type="text">
+      <img src="./img/light/done-white-18dp.svg" class="changDone" onclick="changeNam(this)" data-id="${id}" style="cursor: pointer">
     </div>
-    </div>
-    <input type="file" name="pprofile" id="prfileiN" />
+  </div>
   </div>
   <div class="profileInfo">
     <div class="usrProfileId">
       <strong>Account id</strong>
       <span>${id}</span>
     </div>
-  </div>`;
+  `;
 }

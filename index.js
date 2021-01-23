@@ -33,7 +33,7 @@ app.use("/register", express.static(path.join(__dirname, "views", "register")));
 app.set("view engine", "ejs");
 app.get("/login", (req, res) => {
   if (req.session.accountId) {
-    res.redir("/");
+    res.redirect("/");
   } else {
     res.render("./login/index.ejs");
   }
