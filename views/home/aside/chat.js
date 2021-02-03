@@ -1,18 +1,11 @@
 document.querySelector(".chatIcon").addEventListener("click", e => {
-  if(document.querySelector(".mainProfile")) {
-    Array.from(document.querySelector("main").children).forEach(item => {
-      item.remove();
+  section.innerHTML = listContainer;
+  if (!document.querySelector("#normalChat")) {
+    document.querySelector(".listContainer").setAttribute("id", "normalChat");
+  }
+  if (chatAss) {
+    Object.keys(chatAss).forEach(item => {
+      document.querySelector(".listContainer").innerHTML += createListChat("profilePict", chatAss[item].Message[chatAss[item].Message.length - 1].messageContent, item);
     });
-  }
-  if(document.querySelector("#groupChat")) {
-    document.querySelector("#groupChat").setAttribute("id", "normalChat");
-  }
-  if(!document.querySelector(".listContainer") || !document.querySelector("#groupChat")) {
-    section.innerHTML = listContainer;
-    if(chatAss) {
-      Object.keys(chatAss).forEach(item => {
-        document.querySelector(".listContainer").innerHTML += createListChat("profilePict", chatAss[item].Message[chatAss[item].Message.length - 1].messageContent, item);
-      });
-    }
   }
 });

@@ -4,9 +4,9 @@ function addMessage(id) {
     chatAss[id].Message.forEach(message => {
       const chat = document.querySelector('.chat');
       chat.innerHTML += createChat(message.messageContent, message.recive);
-      chat.scrollTop = chat.scrollHeight
     });
   }
+  document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight
 }
 
 function addMessageGroup(id) {
@@ -46,13 +46,9 @@ function showContactProfile(id, e) {
   e.stopPropagation();
   main.innerHTML = contactProfile(id);
   if (!contacts[id]) {
-    document.querySelector('main').innerHTML += `<div class="addContactAlert">
-      <span class="addContactAlertText">Add to contact?</span>
-      <span class="addedContactAlertQ">
-        <span onclick="instantContact(${id})" class="addContactAlertYes">Yes</span>
-        <span class="addContactAlertNo">No</span>
-      </span>
-    </div>`
+    document.querySelector('.changEd').style.display = "none";
+    document.querySelector('.inputer').style.display = "none";
+    document.querySelector('.usrnamrss').style.paddingLeft = 0;
   }
 }
 
@@ -65,7 +61,6 @@ function getUsrName(id) {
 }
 
 function sendMessage(event) {
-  document.querySelector('.chat').scrollTop = chat.scrollHeight
   event.preventDefault();
   socket.emit('chat', {
     from: id,
@@ -74,25 +69,12 @@ function sendMessage(event) {
   })
 }
 
-
-
-function instantContact(id) {
-  if (!document.querySelector('.containerAddContact')) {
-    section.innerHTML += `<div class="containerAddContact" onclick="removeAddContact(event.target)"></div>
-    <form class="addContactForm">
-    <input class="contactForm" placeholder="Username" type="text">
-    <input type="image" src="./img/dark/person_add-black-36dp.svg" alt="Add contact" onclick="addContactHandler(event, ${id})">
-    </form>`
-  }
-  summonAddContactForm();
-}
-
 function changeUsrnam() {
   document.querySelector('.inputer').style.transform = "translateY(0)";
   document.querySelector('.usrnamrss').style.transform = "translateY(105%)"
 };
 
-async function changeNam(lol) {
+async function changeNam(lol, self) {
   let success = {
     success: false
   };
@@ -105,7 +87,7 @@ async function changeNam(lol) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        self: false,
+        self: self,
         username: usrInput,
         accountId: lol.dataset.id
       })
@@ -113,10 +95,122 @@ async function changeNam(lol) {
 
   if (success.success) {
     document.querySelector('.usernamess').innerText = usrInput;
-    const usrnam = document.querySelector('.username');
-    if (usrnam && usrnam.innerText !== usrInput) document.querySelector('.username').innerText = usrInput
+    if (!self) {
+      const usrnam = document.getElementById(`#${lol.dataset.id}`);
+      if (usrnam && usrnam.innerText !== usrInput) document.querySelector('.username').innerText = usrInput
+    }
     document.querySelector('.inpt').value = '';
+    if (!self) contacts[lol.dataset.id] = usrInput;
   }
   document.querySelector('.usrnamrss').style.transform = "translateY(0)";
   document.querySelector('.inputer').style.transform = "translateY(-105%)"
+}
+
+function alerter(message, dur) {
+  if (!document.querySelector('.alerter')) {
+    if (dur) document.querySelector('.alerters').innerHTML += `<div class="alerter" style="animation-duration: ${dur}s;"><span class="alerterMessage">${message}</span></div>`;
+    else document.querySelector('.alerters').innerHTML += `<div class="alerter"><span class="alerterMessage">${message}</span></div>`;
+    document.querySelector('.alerter').addEventListener('animationend', ev => {
+      ev.target.remove();
+    });
+  }
+}
+
+const deleteCb = (ev) => {
+  console.log(ev.target.parentElement.offsetWidth);
+  if (ev.target.parentElement.offsetWidth == 40) {
+    ev.target.style.display = "none"
+    ev.target.removeEventListener('transitionend', deleteCb)
+  }
+}
+
+function questionGroupMethod() {
+  const propeller = parseInt(document.querySelector('.propeller').style.opacity)
+  if (propeller) {
+    document.querySelector('.joinGroup').style = "";
+    document.querySelector('.propeller').style.opacity = 0;
+    document.querySelector('.linkGroup').style.opacity = 0;
+    document.querySelector('.linkGroup').addEventListener('transitionend', deleteCb);
+    document.querySelector('.propeller').addEventListener('transitionend', deleteCb);
+  };
+  if (document.querySelector('.groupMethod').style.height == "135px") {
+    document.querySelector('.groupMethod').style = `height: 45px;
+    padding-bottom: 0;`
+    document.querySelector('.groupCreate').style.opacity = 0;
+  } else if (document.querySelector('.groupMethod').style.height == "45px" && propeller == 0) {
+    // console.log(document.querySelector('.groupMethod').style.height);
+    document.querySelector('.groupCreate').style.opacity = 1;
+    document.querySelector('.groupMethod').style = `height: 135px;
+    padding-bottom: 75px;
+    box-shadow: 5px 5px 17px -6px rgba(0,0,0,0.75);
+    -webkit-box-shadow: 5px 5px 17px -6px rgba(0,0,0,0.75);
+    -moz-box-shadow: 5px 5px 17px -6px rgba(0,0,0,0.75);
+    `
+  }
+}
+
+function createGroup() {
+
+}
+
+function joinGroup(e) {
+  e.preventDefault();
+  document.querySelector('.joinGroup').style = "";
+  document.querySelector('.propeller').style.opacity = 0;
+  document.querySelector('.linkGroup').style.opacity = 0;
+  document.querySelector('.linkGroup').addEventListener('transitionend', deleteCb);
+  document.querySelector('.propeller').addEventListener('transitionend', deleteCb);
+}
+
+function summonAddContactForm() {
+  const addContactBtn = parseInt(document.querySelector('.addContactBtn').style.opacity)
+  if (addContactBtn) {
+    document.querySelector('.addContactForm').style = "";
+    document.querySelector('.addContactBtn').style.opacity = 0;
+    document.querySelector('.formAddContact').style.opacity = 0;
+    document.querySelector('.formAddContact').addEventListener('transitionend', deleteCb);
+    document.querySelector('.addContactBtn').addEventListener('transitionend', deleteCb);
+  } else {
+    const formAddContact = setTimeout(function () {
+      document.querySelector('.formAddContact').style.display = "flex";
+      document.querySelector('.addContactBtn').style.display = "flex";
+      clearTimeout(formAddContact);
+    }, 100);
+    document.querySelector('.formAddContact').style.opacity = 1;
+    document.querySelector('.addContactBtn').style.opacity = 1;
+    document.querySelector('.addContactForm').style = `width : 387.5px; left: 60px;
+    box-shadow: 5px 5px 17px -6px rgb(0 0 0 / 75%);
+    -webkit-box-shadow: 5px 5px 17px -6px rgb(0 0 0 / 75%);
+    -moz-box-shadow: 5px 5px 17px -6px rgba(0, 0, 0, 0.75);
+    `
+  }
+}
+
+function addContact(e) {
+  document.querySelector('.addContactForm').style = "";
+  document.querySelector('.addContactBtn').style.opacity = 0;
+  document.querySelector('.formAddContact').style.opacity = 0;
+  document.querySelector('.formAddContact').addEventListener('transitionend', deleteCb);
+  document.querySelector('.addContactBtn').addEventListener('transitionend', deleteCb);
+  e.preventDefault()
+  const form = document.querySelector('.formAddContact').value.split("#")
+  addContactHandler(form[0], parseInt(form[1]))
+}
+
+function showLinkGroup() {
+  const linkGroup = setTimeout(function () {
+    document.querySelector('.linkGroup').style.display = "flex";
+    document.querySelector('.propeller').style.display = "flex";
+    clearTimeout(linkGroup);
+  }, 100);
+  document.querySelector('.linkGroup').style.opacity = 1;
+  document.querySelector('.propeller').style.opacity = 1;
+  document.querySelector('.joinGroup').style = `width : 387.5px; left: 60px;
+  box-shadow: 5px 5px 17px -6px rgb(0 0 0 / 75%);
+    -webkit-box-shadow: 5px 5px 17px -6px rgb(0 0 0 / 75%);
+    -moz-box-shadow: 5px 5px 17px -6px rgba(0, 0, 0, 0.75);
+  `
+  document.querySelector('.groupMethod').style = `height: 45px;
+  padding-bottom: 0;`
+  document.querySelector('.groupCreate').style.opacity = 0;
 }

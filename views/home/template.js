@@ -2,7 +2,7 @@ function chat(id) {
   return `
   <div class="chatProfileInfo">
   <img src="./pp/profile.jpeg" alt="Photo Profile" onclick="showContactProfile(${id}, event)" class="profile chatProfilePicture">
-  <span class="chatProfileName">${getUsrName(id)}</span>
+  <span class="chatProfileName" data-id="${id}" >${getUsrName(id)}</span>
   <img src="./img/light/menu-black-36dp.svg" alt="Option" class="option">
   </div>
   <div class="chat">
@@ -63,10 +63,19 @@ function createChatGroup(Message, Pos, name) {
 }
 const listContainer = `<form class="searchChat"><input type="text" oninput="searchChat(this.value)"/><input type="image" src="./img/light/search-black-36dp.svg" alt="Search" /> </form><div id="normalChat" class="listContainer"></div>`;
 
-function createProfile(id, username, date) {
+function createProfile(id, date) {
   return `<div class="mainProfile">
     <img src="./pp/profile.jpeg" class="aclPhotoProfile" alt="Photo Profile" />
-    <span class="profileusrname">${username}</span>
+    <div class="container">
+      <div class="usrnamrss">
+        <span class="usernamess" data-id="${id}" >${accUserName}</span>
+        <img src="./img/light/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
+      </div>
+      <div class="inputer">
+        <input class="inpt" type="text">
+        <img src="./img/light/done-white-18dp.svg" class="changDone" onclick="changeNam(this, true)" style="cursor: pointer">
+      </div>
+    </div>
     <input type="file" name="pprofile" id="prfileiN" />
   </div>
   <div class="profileInfo">
@@ -84,11 +93,10 @@ function createProfile(id, username, date) {
 function contactProfile(id) {
   return `<div class="mainProfile">
   <img src="./pp/profile.jpeg" class="aclPhotoProfile" alt="Photo Profile">
-
   <div class="container">
     <div class="usrnamrss">
-      <span class="usernamess">${getUsrName(id)}</span>
-      <img src="./img/light/edit-white-18dp.svg" style="cursor: pointer" onclick="changeUsrnam()">
+      <span class="usernamess" data-id="${id}" >${getUsrName(id)}</span>
+      <img src="./img/light/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
     </div>
     <div class="inputer">
       <input class="inpt" type="text">

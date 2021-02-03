@@ -55,6 +55,7 @@ const eventCollection = {};
 app.get("/", async (req, res) => {
   const eventKey = uuid();
   if (req.session.accountId) {
+    const dataAcc = await query(`SELECT username FROM account WHERE id="${req.session.accountId}"`);
     const collection = await pool.get().db("message").collection("message");
     const dataAccount = await collection.find({
       accountId: req.session.accountId
@@ -63,12 +64,19 @@ app.get("/", async (req, res) => {
     dataAccount[0].contacts.forEach((item, i) => {
       b[item.accountId] = item.username;
     });
-    console.log(b, '\n\n\n', dataAccount[0], '\n\n\n', dataAccount[0].contacts);
     dataAccount[0].contacts = b;
+    b = {};
+    dataAccount[0].chat.forEach((item, i) => {
+      if (!b[item.accountId]) b[item.accountId] = {
+        Message: item.Message
+      }
+    });
+    dataAccount[0].chat = b;
     eventCollection[req.session.accountId] = eventKey;
     res.render("./home/index.ejs", {
       data: dataAccount[0],
-      event: eventKey
+      event: eventKey,
+      username: dataAcc.data[0].username
     });
   } else {
     res.redirect("/login");
@@ -157,11 +165,13 @@ app.post("/register", async (req, res) => {
         const collection = pool.get().db("message").collection("message");
         collection.insertOne({
           accountId: verifKey.data[0].id,
-          groupChat: {},
+          groupChat: [],
           contacts: [],
-          chat: {}
+          chat: [],
+          chatted: []
         }).then(res => console.log(res))
       });
+      delete req.session.register
       res.json({
         success: true,
         redir: "/login"
@@ -222,19 +232,25 @@ app.put("/register", async (req, res) => {
   });
 });
 app.post('/chcontact', async (req, res) => {
-  const collection = pool.get().db("message").collection("message");
-  const result = await collection.updateOne({
-    accountId: req.session.accountId,
-    "contacts.accountId": parseInt(req.body.accountId)
-  }, {
-    $set: {
-      "contacts.$.username": req.body.username
-    }
-  });
-  console.log(result.result);
-  res.json({
-    success: result.result.nModified
-  })
+  if (req.body.self) {
+    const chang = await query(`UPDATE account SET username="${req.body.username}" WHERE id=${req.session.accountId}`);
+    res.json({
+      success: chang.success
+    })
+  } else {
+    const collection = pool.get().db("message").collection("message");
+    const result = await collection.updateOne({
+      accountId: req.session.accountId,
+      "contacts.accountId": parseInt(req.body.accountId)
+    }, {
+      $set: {
+        "contacts.$.username": req.body.username
+      }
+    });
+    res.json({
+      success: result.result.nModified
+    })
+  }
 })
 app.delete('/contact', (req, res) => {
   if (req.session.accountId && req.body.accountId && req.body.username) {
@@ -268,6 +284,7 @@ server.listen(2020, () => {
 });
 let eventCollections = {};
 io.on('connection', (socket) => {
+  console.log(socket.handshake);
   socket.once('login', data => {
     socket.once('disconnect', () => {
       delete eventCollections[data.accountId];
@@ -310,30 +327,53 @@ function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min) + min);
 }
 async function saveMessage(collection, message, accountId, status, to) {
-  collection.find({
+  const checkMsg = await collection.find({
     accountId: accountId
-  }).toArray().then(checkMsg => {
-    if (checkMsg[0]) {
-      if (checkMsg[0].chat[`${to}`]) {
-        collection.updateOne({
-          accountId: accountId,
-        }, {
-          $push: newMsg(to, status, message),
-        })
-      } else {
+  }).toArray()
+  console.log(checkMsg[0]);
+  if (checkMsg[0]) {
+    if (checkMsg[0].chatted.includes(to)) {
+      collection.updateOne({
+        accountId: accountId,
+        'chat.accountId': to
+      }, {
+        $push: {
+          "chat.$.Message": {
+            recive: status,
+            messageContent: message
+          }
+        }
+      })
+    } else {
+      collection.updateOne({
+        accountId: accountId
+      }, {
+        $push: {
+          chatted: to
+        }
+      }).then((res) => {
+        console.log(res.result);
         collection.updateOne({
           "accountId": accountId
         }, {
-          $set: newChat(to, status, message)
+          $push: {
+            chat: {
+              accountId: to,
+              Message: [{
+                recive: status,
+                messageContent: message
+              }]
+            }
+          }
         })
-      }
+      })
     }
-  });
+  }
 }
 
 function newMsg(accountId, status, message) {
   let chat = {};
-  chat[`chat.${accountId}.Message`] = {
+  chat[`chat.$.Message`] = {
     recive: status,
     messageContent: message,
   };

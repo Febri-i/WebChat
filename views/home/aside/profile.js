@@ -1,5 +1,10 @@
 document.querySelector(".profileIcon").addEventListener("click", ev => {
+  console.log(ev.target);
   if (!document.querySelector(".mainProfile")) {
-    main.innerHTML = createProfile(id, "febri", "20 sep 2020");
+    main.innerHTML = createProfile(id, "20 sep 2020");
+  } else {
+    Array.from(main.children).forEach((item) => {
+      item.remove();
+    });
   }
 });

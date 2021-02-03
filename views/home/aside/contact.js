@@ -3,15 +3,15 @@ document.querySelector(".contactIcon").addEventListener("click", ev => {
     section.innerHTML = listContainer;
     document.querySelector(".listContainer").setAttribute("id", "contactList");
   }
-  if (!document.querySelector('.addContacts') && !document.querySelector('.containerAddContact')) {
+  if (!document.querySelector('.addContacts')) {
     section.innerHTML += `<div class="addContacts">
     <img src="./img/light/person_add-white-36dp.svg" onclick="summonAddContactForm()" alt="Add contacts" class="addContact">
-    </div>`
-    section.innerHTML += `<div class="containerAddContact" onclick="removeAddContact(event.target)"></div>
-    <form class="addContactForm">
-    <input class="contactForm" placeholder="Username#id" type="text">
-    <input type="image" src="./img/dark/person_add-black-36dp.svg" alt="Add contact" onclick="addContactHandler(event)">
-    </form>`
+    </div>
+    <form onsubmit="addContact(event)" class="addContactForm">
+      <input type="image" class="addContactBtn" style="opacity: 0; " src="./img/light/done-white-18dp.svg">
+      <input type="text" class="formAddContact">
+    </form>
+    `
   }
   if (contacts && !document.querySelector('.list')) {
     Object.keys(contacts).forEach(item => {
@@ -20,18 +20,8 @@ document.querySelector(".contactIcon").addEventListener("click", ev => {
   }
 });
 
-function summonAddContactForm(id) {
-  document.querySelector('.containerAddContact').style = 'display: flex; opacity: 1;';
-  document.querySelector('.addContactForm').style = 'display: flex; animation-name: munculAddC;'
-}
-
-function addContactHandler(e, defaultValue) {
-  e.preventDefault();
-  const splitted = document.querySelector('.contactForm').value.split('#');
-  const username = splitted[0]
-  let accountId = splitted[1]
-  if (defaultValue) accountId = defaultValue;
-  if (accountId && document.querySelector('.contactForm').value && typeof username == "string" && parseInt(accountId) !== NaN && accountId.toString().length == 6) {
+function addContactHandler(username, accountId) {
+  if (typeof username == "string", typeof accountId == "number", accountId.toString().length == 6) {
     fetch('/contact', {
       method: 'post',
       headers: {
@@ -44,14 +34,19 @@ function addContactHandler(e, defaultValue) {
       })
     }).then(res => res.json()).then(res => {
       if (res.success) {
-        const ppusernam = document.querySelector('.profileusrname');
-        const chtusrnam = document.querySelector('.listInfo').querySelector('.username');
+        const ppusernam = document.querySelector('.usernamess');
+        const chtusrnam = document.getElementById(`#${accountId}`);
         const usrnam = document.querySelector('.chatProfileName');
-        const asker = document.querySelector('.addContactAlert');
-        if (asker) asker.style.animationName = 'addContactAlertAnimBack';
-        if (ppusernam && ppusernam.innerText !== username) ppusernam.innerText = username
-        if (chtusrnam && chtusrnam.innerText !== username) chtusrnam.innerText = username
-        if (usrnam && usrnam.innerText !== username) usrnam.innerText = username
+        if (ppusernam && ppusernam.dataset.id == accountId) ppusernam.innerText = username
+        if (chtusrnam && chtusrnam.innerText !== username) {
+          document.querySelector('.usrnamrss').style.transition = "none";
+          document.querySelector('.usrnamrss').style.paddingLeft = '34px';
+          chtusrnam.innerText = username
+          document.querySelector('.changEd').style.display = "flex";
+          document.querySelector('.inputer').style.display = "flex";
+          document.querySelector('.usrnamrss').style.transition = "transform .3s";
+        }
+        if (usrnam && usrnam.dataset.id == accountId) usrnam.innerText = username
         contacts[parseInt(accountId)] = username;
         if (document.querySelector('#contactList'))
           document.querySelector('#contactList').innerHTML += createListContact("profilePict", parseInt(accountId));
@@ -59,32 +54,17 @@ function addContactHandler(e, defaultValue) {
         contacts[parseInt(accountId)] = username;
       };
       if (!res.success) {
-        alert(res.err)
+        alerter(res.err)
       } else if (res.scroll && accountId) {
-        removeAddContact(document.querySelector('.containerAddContact'))
         const addedContact = document.getElementById(accountId)
         addedContact.setAttribute('tabindex', '-1');
         addedContact.focus();
         addedContact.removeAttribute('tabindex')
-        removeAddContact(document.querySelector('.containerAddContact'))
       };
     });
   } else {
-    alert('Use correct format!')
+    alerter('Use correct format!')
   }
-}
-
-function removeAddContact(e) {
-  e.style.opacity = 0;
-  if (document.querySelector('.addContactForm')) {
-    document.querySelector('.addContactForm').style.animationName = 'keluarAddC';
-  }
-  const contactAnimEndCall = () => {
-    document.querySelector('.addContactForm').style.display = 'none';
-    e.style.display = 'none';
-    document.querySelector('.addContactForm').removeEventListener('animationend', contactAnimEndCall)
-  }
-  document.querySelector('.addContactForm').addEventListener('animationend', contactAnimEndCall)
 }
 
 function deleteContact(id, e) {
@@ -103,12 +83,24 @@ function deleteContact(id, e) {
     if (res.success) {
       document.getElementById(id).remove();
       const usernam = document.querySelector('.chatProfileName');
-      const ppusernam = document.querySelector('.profileusrname');
-      const editBtn = document.querySelector('.changeContactUseraname');
-      if (editBtn) editBtn.style.display = 'none';
-      if (ppusernam && ppusernam.innerText !== id) ppusernam.innerText = id;
-      if (usernam && usernam.innerText !== id) usernam.innerText = id;
+      const ppusernam = document.querySelector('.usernamess');
+      if (ppusernam && ppusernam.dataset.id == id) {
+        ppusernam.innerText = id;
+        const cb = (e) => {
+          document.querySelector('.usrnamrss').style.transition = "none";
+          document.querySelector('.changEd').style.display = "none";
+          document.querySelector('.inputer').style.display = "none";
+          document.querySelector('.usrnamrss').style.paddingLeft = 0;
+          if (e) e.target.removeEventListener('transitionend', cb);
+        };
+        if (document.querySelector('.usrnamrss').style.transform == 'translateY(105%)') {
+          document.querySelector('.inputer').style.transform = "translateY(105%)"
+          document.querySelector('.usrnamrss').style.transform = 'translateY(0px)';
+          document.querySelector('.usrnamrss').addEventListener('transitionend', cb);
+        } else cb();
+      }
+      if (usernam && usernam.dataset.id == id) usernam.innerText = id;
       delete contacts[id];
-    } else alert(res.err)
+    } else alerter(res.err)
   });
 }

@@ -3,41 +3,49 @@ socket.emit('login', id);
 Array.from(document.querySelector("aside").children).forEach((element) => {
   element.addEventListener("click", (ev) => {
     Array.from(document.querySelector("aside").children).forEach((element) => {
-      element.style.backgroundColor = "white";
+      if (ev.target.classList[0].toString() !== "profileIcon") element.style.backgroundColor = "white";
     });
     ev.target.style.backgroundColor = "rgba(0, 0, 0, 0.3)";
-  });
-});
-Array.from(document.querySelector("aside").children).forEach((child) => {
-  child.addEventListener("click", (ev) => {
-    Array.from(document.querySelector("aside").children).forEach((item) => {
-      if (ev.target !== item && item.style.backgroundColor == "rgba(0, 0, 0, 0.3)") {
-        item.style.backgroundColor = "white";
-      }
-    });
+    if (document.querySelector('.mainProfile')) {
+      document.querySelector('.profileIcon').style.backgroundColor = "rgba(0, 0, 0, 0.3)";
+    } else {
+      if (ev.target.classList[0].toString() == "profileIcon") ev.target.style.backgroundColor = "white";
+    }
   });
 });
 socket.on(event.toString(), (data) => {
+  console.log(data);
+  console.log(data.message);
   const chat = document.querySelector('.chat')
   if (data.message.recive) {
+    if (!chatAss[data.to]) {
+      chatAss[data.to] = {};
+      chatAss[data.to].Message = [];
+    };
+    chatAss[data.to].Message.push(data.message)
     socketProcs(data.to, data, createChatTrue)
   } else {
+    if (!chatAss[data.from]) {
+      chatAss[data.from] = {};
+      chatAss[data.from].Message = [];
+    };
+    chatAss[data.from].Message.push(data.message)
     socketProcs(data.from, data, createChatFalse)
   }
 });
 
 function socketProcs(fto, data, func) {
-  const elem = document.getElementById(fto)
   const sendBtn = document.querySelector('.sendBtn');
-  if (sendBtn.getAttribute('data-id') == fto) {
+  if (sendBtn && sendBtn.getAttribute('data-id') == fto) {
     document.querySelector('.chat').innerHTML += func(data.message.messageContent);
+    document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight;
   };
-  console.log(elem, elem.length);
-  if (document.getElementById(fto)) {
+  const elem = document.getElementById(fto)
+  if (document.getElementById('normalChat')) {
     if (elem) {
       elem.children[1].children[1].innerText = data.message.messageContent;
     } else {
-      document.querySelector('.listContainer').innerHTML += createListChat('profilePict', contacts[parseInt(fto)], data.message.messageContent, fto)
+      document.querySelector('.listContainer').innerHTML += createListChat('profilePict', data.message.messageContent, fto)
     }
   }
 }

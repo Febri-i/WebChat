@@ -13,10 +13,14 @@
 </script>
 <script type="text/javascript">
   const event = "<%= event %>"
+  const accUserName = "<%= username %>"
   const id = <%- JSON.stringify(data.accountId) %>
-  const groupChat = <%- JSON.stringify(data.groupChat) %>
-  const contacts = <%- JSON.stringify(data.contacts) %>
-  const chatAss = <%- JSON.stringify(data.chat) %>
+  let groupChat = {};
+  groupChat = <%- JSON.stringify(data.groupChat) %>
+  let contacts = {};
+  contacts = <%- JSON.stringify(data.contacts) %>
+  let chatAss = {};
+  chatAss = <%- JSON.stringify(data.chat) %>
 </script>
 <body>
   <aside>
@@ -26,10 +30,9 @@
     <img src="./img/light/contacts-black-36dp.svg" alt="Contact" class="contactIcon" />
     <img src="./img/light/settings-black-36dp.svg" alt="Setting" class="setting" />
   </aside>
-  <section>
-
-  </section>
+  <section></section>
   <main></main>
+  <div class="alerters"></div>
 </body>
 <script type="text/javascript">
 const main = document.querySelector("main"),

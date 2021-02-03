@@ -60,6 +60,7 @@ aside img {
 section {
   min-width: 400px;
   height: 100vh;
+  /* position: relative; */
 }
 
 .profile {
@@ -81,6 +82,7 @@ aside img:hover {
 }
 
 .searchChat {
+  transition: transform 0.8s;
   outline: none;
   -webkit-box-pack: center;
   -ms-flex-pack: center;
@@ -124,6 +126,11 @@ aside img:hover {
   border-radius: 0 50vh 50vh 0;
 }
 
+.sectionContainer {
+  transition: .8s;
+  position: relative;
+}
+
 .list {
   cursor: pointer;
   padding-bottom: 5px;
@@ -162,12 +169,14 @@ aside img:hover {
 }
 
 .listContainer {
+  transition: transform .8s;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   padding: 0 0 10px 0px;
   height: calc(100vh - 66px);
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 .lastChatGroup,
@@ -420,6 +429,7 @@ aside img:hover {
 }
 
 .addContacts {
+  z-index: 10;
   background-color: dodgerblue;
   position: absolute;
   bottom: 30px;
@@ -448,7 +458,7 @@ aside img:hover {
   }
 
   to {
-    bottom: 20px;
+    bottom: 30px;
   }
 }
 
@@ -466,73 +476,6 @@ aside img:hover {
 @font-face {
   font-family: poppinsExtra;
   src: url(./font/Poppins-ExtraBold.ttf);
-}
-
-.addContactForm input[type=text] {
-  font-family: poppins;
-  outline: none;
-  padding: 0 0px;
-  padding-left: 15px;
-  font-size: 17px;
-  width: 100%;
-  border-radius: 50vh 0 0 50vh;
-  border: 0;
-}
-
-.addContactForm input[type=image] {
-  padding: 5px;
-  box-sizing: border-box;
-  height: 35px;
-  outline: none;
-}
-
-.addContactForm {
-  display: none;
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  height: 35px;
-  background-color: white;
-  align-items: center;
-  padding-right: 10px;
-  border-radius: 50vh;
-  width: 250px;
-  animation-duration: 1s;
-  animation-fill-mode: forwards;
-  border: 1px solid rgba(0, 0, 0, .6);
-}
-
-@keyframes keluarAddC {
-  from {
-    transform: translate(-50%, -50%);
-  }
-
-  to {
-    transform: translateY(100vh);
-  }
-}
-
-@keyframes munculAddC {
-  from {
-    transform: translateY(100vh);
-  }
-
-  to {
-    transform: translate(-50%, -50%);
-  }
-}
-
-.containerAddContact {
-  transition: opacity .4s;
-  justify-content: center;
-  align-items: center;
-  width: 100vw;
-  height: 100vh;
-  top: 0;
-  display: none;
-  left: 0;
-  position: fixed;
-  background-color: rgba(0, 0, 0, .3);
 }
 
 .deleteContact {
@@ -672,4 +615,158 @@ aside img:hover {
 
 .changDone {
   width: 45px;
+}
+
+@keyframes alerter {
+  0% {
+    bottom: -100%;
+  }
+
+  20% {
+    bottom: 40px;
+  }
+
+  60% {
+    bottom: 40px;
+  }
+
+  100% {
+    bottom: -100%;
+  }
+}
+
+.alerter {
+  z-index: 999;
+  animation-name: alerter;
+  animation-duration: 5s;
+  animation-fill-mode: forwards;
+  position: fixed;
+  max-width: 35vw;
+  width: fit-content;
+  white-space: -moz-pre-wrap !important;
+  white-space: -pre-wrap;
+  line-height: 98%;
+  white-space: -o-pre-wrap;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  white-space: -webkit-pre-wrap;
+  word-break: break-all;
+  white-space: normal;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, .5);
+  font-family: 'monsterrat';
+  padding: 10px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+}
+
+.addGroups {
+  z-index: 2;
+  background-color: dodgerblue;
+  position: absolute;
+  bottom: 30px;
+  left: 390px;
+  width: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50vh;
+  margin-right: 100px;
+  padding: 25px 25px 25px 25px;
+  height: 45px;
+  animation-name: muncul;
+  animation-duration: 0.6s;
+  animation-fill-mode: forwards;
+  transition: box-shadow 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.addGroup:hover {
+  box-shadow: 0 0 20px dodgerblue;
+}
+
+.groupMethod {
+  background-color: rgb(50, 50, 50);
+  position: absolute;
+  bottom: 30px;
+  left: 390px;
+  width: 35px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50vh;
+  margin-right: 100px;
+  padding: 25px 25px 25px 25px;
+  height: 45px;
+  transform: scale(0.88);
+  box-shadow: 5px 5px 17px -6px rgba(0, 0, 0, 0.75);
+  -webkit-box-shadow: 5px 5px 17px -6px rgba(0, 0, 0, 0.75);
+  -moz-box-shadow: 5px 5px 17px -6px rgba(0, 0, 0, 0.75);
+  flex-direction: column;
+  animation-name: muncul;
+  animation-duration: 0.6s;
+  animation-fill-mode: forwards;
+  transition: 1s;
+}
+
+.groupCreate {
+  opacity: 0;
+  transition: .7s;
+}
+
+form.joinGroup input[type="text"], form.addContactForm input[type="text"] {
+  opacity: 0;
+  display: none;
+  width: 75%;
+  height: 30px;
+  border-radius: 50vh;
+  outline: none;
+  padding-left: 10px;
+  font-family: poppins;
+  transition: .6s;
+  font-weight: 27px;
+  font-weight: 600;
+  border: none;
+}
+
+form.joinGroup, form.addContactForm {
+  animation-name: muncul;
+  animation-duration: 0.6s;
+  animation-fill-mode: forwards;
+  transition: 1s;
+  background-color: rgb(50, 50, 50);
+  position: absolute;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  border-radius: 22.5vh;
+  padding: 25px 0px 25px 5px;
+  height: 45px;
+  transform: scale(0.88);
+  justify-content: flex-start;
+  transition: 1s;
+  left: 420px;
+  width: 0px;
+}
+
+form.joinGroup input[type=image], form.addContactForm input[type=image] {
+  width: 40px;
+  padding: 5px;
+  background-color: limegreen;
+  border-radius: 50%;
+  margin-right: 10px;
+  transition: .6s;
+  outline: none;
+  opacity: 0;
+  display: none;
+}
+
+form.joinGroup input[type=image]:hover {
+  background-color: lime;
+}
+
+form.addContactForm input[type=image]:hover {
+  background-color: lime;
 }
