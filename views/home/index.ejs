@@ -29,6 +29,7 @@
     <img src="./img/light/group-black-36dp.svg" alt="Group Chat" class="groupchatIcon" />
     <img src="./img/light/contacts-black-36dp.svg" alt="Contact" class="contactIcon" />
     <img src="./img/light/settings-black-36dp.svg" alt="Setting" class="setting" />
+    <img src="./img/light/logout-black-36dp.svg" onclick="logout()" alt="Setting" class="setting" />
   </aside>
   <section></section>
   <main></main>
@@ -37,6 +38,12 @@
 <script type="text/javascript">
 const main = document.querySelector("main"),
     section = document.querySelector("section");
+  function logout() {
+    fetch("/logout", {
+      method: "get"
+    });
+    window.location.replace("http://localhost:2020/login/");
+  }
 </script>
 <script src="./template.js" type="text/javascript"></script>
 <script type="text/javascript" src="./function.js"></script>

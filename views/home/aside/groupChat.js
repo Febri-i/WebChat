@@ -20,18 +20,10 @@ document.querySelector(".groupchatIcon").addEventListener("click", e => {
     document.querySelector('.addGroups').addEventListener('animationend', ev => ev.target.style.animationName = "l");
   }
 
+
   Object.keys(groupChat).forEach(item => {
 
-    document.querySelector(".listContainer").innerHTML += createListChatGroup(
-      "profilePict",
-      groupChat[item].groupName,
-      groupChat[item].message[groupChat[item].message.length - 1]
-      .messageContent,
-      groupChat[item].member[
-        groupChat[item].message[groupChat[item].message.length - 1].from
-      ].username,
-      item
-    );
+    document.querySelector(".listContainer").innerHTML += createListChatGroup(item);
   });
 
 });

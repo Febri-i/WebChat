@@ -3,40 +3,48 @@ function addMessage(id) {
   if (chatAss[id] && chatAss[id].Message) {
     chatAss[id].Message.forEach(message => {
       const chat = document.querySelector('.chat');
-      chat.innerHTML += createChat(message.messageContent, message.recive);
+      chat.innerHTML += createChat(message.messageContent, message.from);
     });
   }
   document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight
 }
 
 function addMessageGroup(id) {
-  let member = "";
-  Object.keys(groupChat[id].member).forEach(item => {
-    console.log(item, groupChat[id].member);
-    if (item === Object.keys(groupChat[id].member)[Object.keys(groupChat[id].member).length - 1]) {
-      member += `${groupChat[id].member[item].username}`;
-    } else {
-      member += `${groupChat[id].member[item].username}, `;
-    }
-  });
-  main.innerHTML = chatGroup(id, member);
+  main.innerHTML = chatGroup(id);
   if (groupChat[id].message) {
     groupChat[id].message.forEach(message => {
-      document.querySelector(".chat").innerHTML += createChatGroup(message.messageContent, message.recive, groupChat[id].member[message.from].username);
+      document.querySelector(".chat").innerHTML += createChatGroup(message.messageContent, message.from);
     });
   }
 }
 
-function searchChat(keyword) {
-  if (keyword) {
-    if (document.querySelector(".list")) {
-      Array.from(document.querySelectorAll(".list")).forEach(item => {
-        if (!item.children[1].children[0].textContent.toLowerCase().includes(keyword.toLowerCase())) item.style.display = "none";
+function sendGroupMessage(elemnt, e) {
+  e.preventDefault();
+  const message = elemnt.parentElement.children[0].value;
+  if (document.getElementById("groupChat")) {
+    document.getElementById(elemnt.dataset.id).querySelector('.lastChatGroup').innerText = `You: ${message}`
+  }
+  document.querySelector('.chat').innerHTML += createChatGroup(message, id);
+  groupChat[elemnt.dataset.id].message.push({
+    from: id,
+    messageContent: message
+  })
+  socket.emit("groupChat", {
+    groupId: parseInt(elemnt.dataset.id),
+    messageContent: message
+  })
+}
+
+function searchChat(elem) {
+  if (elem.value) {
+    if (elem.parentElement.parentElement.children[1].children) {
+      Array.from(elem.parentElement.parentElement.children[1].children).forEach(item => {
+        if (!item.children[1].children[0].textContent.toLowerCase().includes(elem.value.toLowerCase())) item.style.display = "none";
         else item.style.display = "flex";
       });
     }
   } else {
-    Array.from(document.querySelectorAll(".list")).forEach(item => {
+    Array.from(elem.parentElement.parentElement.children[1].children).forEach(item => {
       item.style.display = "flex";
     });
   }
@@ -52,20 +60,39 @@ function showContactProfile(id, e) {
   }
 }
 
-function getUsrName(id) {
-  if (contacts[id]) {
-    return contacts[id]
+function getUsrName(ids) {
+  if (contacts[ids]) {
+    return contacts[ids]
+  } else if (ids == id) {
+    return "You";
   } else {
-    return id
+    return ids
   }
 }
 
 function sendMessage(event) {
   event.preventDefault();
-  socket.emit('chat', {
+  const message = document.querySelector('.messageContent').value
+  const elem = document.getElementById(event.target.dataset.id);
+  if (!chatAss[event.target.dataset.id]) chatAss[event.target.dataset.id] = {
+    Message: []
+  };
+  chatAss[event.target.dataset.id].Message.push({
     from: id,
-    to: document.querySelector('.sendBtn').dataset.id,
-    message: document.querySelector('.messageContent').value
+    messageContent: message
+  });
+  document.querySelector('.chat').innerHTML += createChat(message, id);
+  document.querySelector('.chat').scrollTop = document.querySelector('.chat').scrollHeight;
+  if (document.getElementById('normalChat')) {
+    if (elem) {
+      elem.children[1].children[1].innerText = message;
+    } else {
+      document.querySelector('.listContainer').innerHTML += createListChat('profilePict', data.message.messageContent, fto)
+    }
+  }
+  if (message.length) socket.emit('chat', {
+    to: parseInt(document.querySelector('.sendBtn').dataset.id),
+    message: message
   })
 }
 
@@ -117,7 +144,6 @@ function alerter(message, dur) {
 }
 
 const deleteCb = (ev) => {
-  console.log(ev.target.parentElement.offsetWidth);
   if (ev.target.parentElement.offsetWidth == 40) {
     ev.target.style.display = "none"
     ev.target.removeEventListener('transitionend', deleteCb)
@@ -138,7 +164,6 @@ function questionGroupMethod() {
     padding-bottom: 0;`
     document.querySelector('.groupCreate').style.opacity = 0;
   } else if (document.querySelector('.groupMethod').style.height == "45px" && propeller == 0) {
-    // console.log(document.querySelector('.groupMethod').style.height);
     document.querySelector('.groupCreate').style.opacity = 1;
     document.querySelector('.groupMethod').style = `height: 135px;
     padding-bottom: 75px;
@@ -148,9 +173,57 @@ function questionGroupMethod() {
     `
   }
 }
+let listCreateGroup = [];
+
+function addContactToList(elemnt) {
+  if (listCreateGroup.includes(parseInt(elemnt.id))) {
+    listCreateGroup = listCreateGroup.filter(item => item.toString() !== elemnt.id.toString())
+    elemnt.style.backgroundColor = ""
+  } else {
+    elemnt.style.backgroundColor = `rgb(${Math.floor(Math.random() * 125) + 125}, ${Math.floor(Math.random() * 125) + 125}, ${Math.floor(Math.random() * 125) + 125})`
+    listCreateGroup.push(parseInt(elemnt.id))
+  }
+}
+
+async function CreateTheGroup(e) {
+  e.preventDefault();
+  const groupName = document.querySelector('.groupName').value
+  if (groupName.length) {
+    success = await fetch('/groupChat', {
+      method: 'post',
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        groupName: groupName,
+        member: listCreateGroup
+      })
+    }).then(res => res.json())
+  }
+}
+
 
 function createGroup() {
-
+  if (Object.keys(contacts).length >= 2) {
+    main.innerHTML = `
+    <div class="createGroupOptContainer">
+      <img src="./pp/profile.jpeg" class="groupProfile">
+      <form class="createGroupName" onsubmit="CreateTheGroup(event)" method="post">
+        <input type="text" name="groupName" class="groupName" placeholder="Enter group name">
+        <input type="image" src="./img/light/done-white-18dp.svg">
+      </form>
+    </div>
+    <div class="listContainerSelect">
+    </div>
+    `
+    Object.keys(contacts).forEach(id => {
+      document.querySelector('.listContainerSelect').innerHTML += createSelectContact(id)
+    });
+    document.querySelector('.groupMethod').style = `height: 45px;
+    padding-bottom: 0;`
+    document.querySelector('.groupCreate').style.opacity = 0;
+  } else alerter("You only have 1 contacts!(Need more than 2 people to make group)")
 }
 
 function joinGroup(e) {

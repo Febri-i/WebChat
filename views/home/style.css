@@ -168,7 +168,7 @@ aside img:hover {
   justify-content: center;
 }
 
-.listContainer {
+.listContainer, .listContainerSelect {
   transition: transform .8s;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
@@ -177,6 +177,10 @@ aside img:hover {
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+}
+
+.listContainerSelect {
+  width: 100%;
 }
 
 .lastChatGroup,
@@ -769,4 +773,52 @@ form.joinGroup input[type=image]:hover {
 
 form.addContactForm input[type=image]:hover {
   background-color: lime;
+}
+
+.createGroupOptContainer {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  padding: 10px 0px 15px 10px;
+  display: flex;
+  align-items: center;
+}
+
+.createGroupOptContainer img {
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.createGroupName input[type=text] {
+  font-size: 15px;
+  padding-top: 10px;
+  padding-left: 2px;
+  background-color: white;
+  border: 0;
+  outline: none;
+  border-bottom: 2px solid rgb(150, 150, 150);
+  margin-left: 10px;
+  width: 100%;
+}
+
+.createGroupName {
+  display: flex;
+  width: 90%;
+}
+
+.createGroupName input[type=image] {
+  background-color: dodgerblue;
+  height: 35px;
+  margin-left: 10px;
+  border-radius: 50%;
+  padding: 7px;
+  box-shadow: 1px 1px 10px rgba(0, 0, 0, .3);
+  outline: none;
+}
+
+.deleteSelected {
+  height: 25px;
+  margin-right: 10px;
+  opacity: 0;
+  display: none;
+  cursor: pointer;
 }

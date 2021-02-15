@@ -1,4 +1,5 @@
 const cookieParser = require("cookie-parser"),
+  cookie = require('cookie'),
   express = require("express"),
   app = express(),
   path = require("path"),
@@ -7,22 +8,25 @@ const cookieParser = require("cookie-parser"),
   {
     query
   } = require("./db.js"),
+  MemoryStore = new session.MemoryStore(),
   bcrypt = require("bcrypt"),
   assert = require("assert"),
   dbName = "message",
   pool = require('./pool'),
-  uuid = require("uuid").v4;
-server = require("http").Server(app);
-io = require("socket.io")(server);
+  uuid = require("uuid").v4,
+  server = require("http").Server(app),
+  io = require("socket.io")(server);
 pool.connect();
+let eventCollections = {};
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 app.use(cookieParser());
 app.set("trust proxy", 1);
 app.use(session({
+  store: MemoryStore,
   key: "session",
-  secret: "session",
+  secret: "secret",
   resave: false,
   saveUninitialized: false
 }));
@@ -51,16 +55,17 @@ app.get("/register", (req, res) => {
     });
   }
 });
-const eventCollection = {};
 app.get("/", async (req, res) => {
   const eventKey = uuid();
   if (req.session.accountId) {
     const dataAcc = await query(`SELECT username FROM account WHERE id="${req.session.accountId}"`);
-    const collection = await pool.get().db("message").collection("message");
+    const collection = pool.get().db("message").collection("message");
+    const groupChatCollection = pool.get().db("message").collection("group");
     const dataAccount = await collection.find({
       accountId: req.session.accountId
     }).toArray();
     let b = {};
+    let admin = false;
     dataAccount[0].contacts.forEach((item, i) => {
       b[item.accountId] = item.username;
     });
@@ -72,7 +77,20 @@ app.get("/", async (req, res) => {
       }
     });
     dataAccount[0].chat = b;
-    eventCollection[req.session.accountId] = eventKey;
+    b = {};
+    for (var i = 0; i < dataAccount[0].groupChat.length; i++) {
+      item = dataAccount[0].groupChat[i];
+      const groupChatData = await groupChatCollection.find({
+        groupId: item.groupId
+      }).toArray();
+      b[item.groupId] = {
+        groupName: groupChatData[0].groupName,
+        role: groupChatData[0].member.filter(item => item.accountId == req.session.accountId)[0].role,
+        member: groupChatData[0].member,
+        message: item.message
+      };
+    };
+    dataAccount[0].groupChat = b;
     res.render("./home/index.ejs", {
       data: dataAccount[0],
       event: eventKey,
@@ -131,7 +149,21 @@ app.post("/login", async (req, res) => {
   if (req.body.email && req.body.password) {
     const dataAccount = await query(`SELECT password, id, verifStatus, username, email FROM account WHERE email='${req.body.email}'`);
     if (dataAccount.data[0] && await bcrypt.compare(req.body.password, dataAccount.data[0].password) && parseInt(dataAccount.data[0].verifStatus)) {
+      const collection = pool.get().db("message").collection("message");
       req.session.accountId = dataAccount.data[0].id;
+      const dataMongo = await collection.find({
+        accountId: dataAccount.data[0].id,
+      }).toArray();
+      let listGroup = {};
+      for (var i = 0; i < dataMongo[0].groupChat.length; i++) {
+        const item = dataMongo[0].groupChat[i];
+        const collection = pool.get().db("message").collection("group");
+        const dataGroupChat = await collection.find({
+          groupId: item.groupId
+        }).toArray();
+        listGroup[item.groupId] = dataGroupChat[0].roomKey;
+      }
+      req.session.groupChat = listGroup;
       res.json({
         success: true,
         redir: '/'
@@ -146,7 +178,7 @@ app.post("/login", async (req, res) => {
         success: true,
         redir: '/register'
       });
-    } else if (eventCollection[dataAccount.data[0].password]) {
+    } else if (eventCollections[dataAccount.data[0].id]) {
       res.json({
         success: false,
         err: 'No multiple login'
@@ -169,7 +201,7 @@ app.post("/register", async (req, res) => {
           contacts: [],
           chat: [],
           chatted: []
-        }).then(res => console.log(res))
+        })
       });
       delete req.session.register
       res.json({
@@ -188,7 +220,6 @@ app.post("/register", async (req, res) => {
 app.put("/register", async (req, res) => {
   if (req.body.email && req.body.password && req.body.username) {
     const checkEmail = await query(`SELECT email, verifStatus, password, username FROM account WHERE email='${req.body.email}'`);
-    console.log(checkEmail);
     if (checkEmail.data[0]) {
       const compare = await bcrypt.compare(req.body.password, checkEmail.data[0].password);
       if (checkEmail.data[0].verifStatus == 1) res.json({
@@ -231,6 +262,67 @@ app.put("/register", async (req, res) => {
     err: "Fill the form!"
   });
 });
+
+app.post('/groupChat', (req, res) => {
+  if (req.session.accountId) {
+    const groupId = randomNumber(100000, 1000000);
+    const collection = pool.get().db("message").collection("message");
+    const member = req.body.member.filter(item => item !== req.session.accountId)
+    collection.updateOne({
+      accountId: req.session.accountId
+    }, {
+      $push: {
+        groupChat: {
+          groupId: groupId,
+          role: "admin",
+          message: []
+        }
+      }
+    }).then(async ress => {
+      let success = false;
+      const members = [];
+      if (ress.result.nModified) {
+        for (var i = 0; i < req.body.member.length; i++) {
+          const item = req.body.member[i]
+          if (item !== req.session.accountId) {
+            members.push({
+              accountId: item,
+              role: "member"
+            })
+            await collection.updateOne({
+              accountId: item
+            }, {
+              $push: {
+                groupChat: {
+                  groupId: groupId,
+                  role: "member",
+                  message: []
+                }
+              }
+            }).then(result => success = result.result.nModified)
+          }
+
+        }
+      }
+      pool.get().db("message").collection("group").insertOne({
+        groupId: groupId,
+        groupName: req.body.groupName,
+        roomKey: uuid(),
+        member: [{
+          accountId: req.session.accountId,
+          role: "admin"
+        }, ...members]
+      }).then(ress => {
+        if (ress.result.n) res.json({
+          success: true
+        })
+        else res.json({
+          success: false
+        })
+      })
+    })
+  }
+})
 app.post('/chcontact', async (req, res) => {
   if (req.body.self) {
     const chang = await query(`UPDATE account SET username="${req.body.username}" WHERE id=${req.session.accountId}`);
@@ -251,7 +343,14 @@ app.post('/chcontact', async (req, res) => {
       success: result.result.nModified
     })
   }
+});
+
+app.get("/logout", (req, res) => {
+  delete req.session.accountId;
+  delete req.session.groupChat;
+  res.redirect("/login");
 })
+
 app.delete('/contact', (req, res) => {
   if (req.session.accountId && req.body.accountId && req.body.username) {
     pool.get().db("message").collection("message")
@@ -279,118 +378,116 @@ app.delete('/contact', (req, res) => {
     })
   }
 })
+
 server.listen(2020, () => {
   console.log('listen')
 });
-let eventCollections = {};
-io.on('connection', (socket) => {
-  console.log(socket.handshake);
-  socket.once('login', data => {
-    socket.once('disconnect', () => {
-      delete eventCollections[data.accountId];
-      delete eventCollection[data.accountId];
-    });
-    if (data) {
-      eventCollections[data] = socket.id;
-    } else {
-      socket.disconnect()
-    }
-    socket.on('chat', async data => {
-      const collection = await pool.get().db("message").collection("message");
-      saveMessage(collection, data.message, parseInt(data.from), true, parseInt(data.to))
-      saveMessage(collection, data.message, parseInt(data.to), false, parseInt(data.from))
-      if (eventCollection[data.from] && eventCollections[data.from]) {
-        io.to(eventCollections[data.from]).emit(`${eventCollection[data.from]}`, {
-          from: data.from,
-          to: data.to,
-          message: {
-            recive: true,
-            messageContent: data.message
+io.on('connection', async (socket) => {
+  const collection = await pool.get().db("message").collection("message");
+  const cookieString = socket.request.headers.cookie;
+  const cookieParsed = cookie.parse(cookieString);
+  let listRoom;
+  const sidParsed = cookieParser.signedCookie(cookieParsed.session, "secret");
+  await MemoryStore.get(sidParsed, async (err, dataSession) => {
+    if (err) console.log(err);
+    if (dataSession) {
+      listRoom = dataSession.groupChat;
+      Object.keys(dataSession.groupChat).forEach((item) => {
+        socket.join(dataSession.groupChat[item]);
+      });
+      socket.on("disconnect", () => delete eventCollections[dataSession.accountId]);
+      eventCollections[dataSession.accountId] = socket.id;
+      ////////////SENDING CHAT/////////////
+      //Group chat
+      socket.on('groupChat', data => {
+        socket.to(listRoom[data.groupId]).broadcast.emit('groupChat', {
+          groupId: data.groupId,
+          from: dataSession.accountId,
+          message: data.messageContent
+        });
+        collection.updateMany({
+          "groupChat.groupId": data.groupId
+        }, {
+          $push: {
+            "groupChat.$.message": {
+              from: dataSession.accountId,
+              messageContent: data.messageContent
+            }
           }
-        })
-      }
-      if (eventCollection[data.to] && eventCollections[data.to]) {
-        io.to(eventCollections[data.to]).emit(`${eventCollection[data.to]}`, {
-          from: data.from,
-          to: data.to,
-          message: {
-            recive: false,
-            messageContent: data.message
-          }
-        })
-      }
-    })
+        }).then(res => console.log(res.result))
+      })
+
+      //Normal chat
+      socket.on('chat', async data => {
+        if (eventCollections[data.to]) io.to(eventCollections[data.to]).emit(`chats`, {
+          from: dataSession.accountId,
+          message: data.message
+        });
+        const checkMsgTo = await collection.find({
+          accountId: data.to
+        }).toArray();
+        if (checkMsgTo[0]) {
+          collection.updateOne({
+            accountId: dataSession.accountId,
+            'chat.accountId': data.to
+          }, {
+            $push: {
+              "chat.$.Message": {
+                from: dataSession.accountId,
+                messageContent: data.message
+              }
+            }
+          }).then(result => {
+            if (!result.result.nModified)
+              collection.updateOne({
+                accountId: dataSession.accountId
+              }, {
+                $push: {
+                  chat: {
+                    accountId: data.to,
+                    Message: [{
+                      from: dataSession.accountId,
+                      messageContent: data.message
+                    }]
+                  }
+                }
+              })
+          })
+
+          collection.updateOne({
+            accountId: data.to,
+            'chat.accountId': dataSession.accountId
+          }, {
+            $push: {
+              "chat.$.Message": {
+                from: dataSession.accountId,
+                messageContent: data.message
+              }
+            }
+          }).then(result => {
+            if (!result.result.nModified)
+              collection.updateOne({
+                accountId: data.to
+              }, {
+                $push: {
+                  chat: {
+                    accountId: dataSession.accountId,
+                    Message: [{
+                      from: dataSession.accountId,
+                      messageContent: data.message
+                    }]
+                  }
+                }
+              })
+          })
+        }
+      })
+    } else socket.disconnect();
   });
 });
 
 function randomNumber(min, max) {
   return Math.floor(Math.random() * (max - min) + min);
-}
-async function saveMessage(collection, message, accountId, status, to) {
-  const checkMsg = await collection.find({
-    accountId: accountId
-  }).toArray()
-  console.log(checkMsg[0]);
-  if (checkMsg[0]) {
-    if (checkMsg[0].chatted.includes(to)) {
-      collection.updateOne({
-        accountId: accountId,
-        'chat.accountId': to
-      }, {
-        $push: {
-          "chat.$.Message": {
-            recive: status,
-            messageContent: message
-          }
-        }
-      })
-    } else {
-      collection.updateOne({
-        accountId: accountId
-      }, {
-        $push: {
-          chatted: to
-        }
-      }).then((res) => {
-        console.log(res.result);
-        collection.updateOne({
-          "accountId": accountId
-        }, {
-          $push: {
-            chat: {
-              accountId: to,
-              Message: [{
-                recive: status,
-                messageContent: message
-              }]
-            }
-          }
-        })
-      })
-    }
-  }
-}
-
-function newMsg(accountId, status, message) {
-  let chat = {};
-  chat[`chat.$.Message`] = {
-    recive: status,
-    messageContent: message,
-  };
-  return chat
-}
-
-function newChat(accountId, status, message) {
-  let sets = {
-    chat: {}
-  };
-  sets.chat[accountId] = {
-    Message: [{
-      recive: status,
-      messageContent: message
-    }]
-  };
-  return sets
 }
 
 function newContact(id, username) {
