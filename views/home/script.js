@@ -4,13 +4,11 @@ Array.from(document.querySelector("aside").children).forEach((element) => {
   element.addEventListener("click", (ev) => {
     if (document.querySelector('.listContainerSelect')) main.innerHTML = "";
     Array.from(document.querySelector("aside").children).forEach((element) => {
-      if (ev.target.classList[0].toString() !== "profileIcon") element.style.backgroundColor = "white";
+      if (ev.target.classList[0].toString() !== "profileIcon") element.style.backgroundColor = "rgb(37, 39, 44)";
     });
     ev.target.style.backgroundColor = "rgba(0, 0, 0, 0.3)";
-    if (document.querySelector('.mainProfile')) {
-      document.querySelector('.profileIcon').style.backgroundColor = "rgba(0, 0, 0, 0.3)";
-    } else {
-      if (ev.target.classList[0].toString() == "profileIcon") ev.target.style.backgroundColor = "white";
+    if (document.querySelector('.mainProfile')) {} else {
+      if (ev.target.classList[0].toString() == "profileIcon") ev.target.style.backgroundColor = "rgb(37, 39, 44)";
     }
   });
 });
@@ -18,12 +16,30 @@ Array.from(document.querySelector("aside").children).forEach((element) => {
 socket.on("groupChat", data => {
   groupChat[data.groupId].message.push({
     from: data.from,
-    messageContent: data.message
+    messageContent: data.message,
+    messageId: data.messageId
   })
   const button = document.querySelector('.sendBtn');
   if (button && button.dataset.id == data.groupId) document.querySelector('.chat').innerHTML += createChatGroup(data.message, data.from)
   if (document.getElementById("groupChat")) {
     document.getElementById(data.groupId).querySelector('.lastChatGroup').innerText = `${getUsrName(data.from)}: ${data.message}`
+  }
+})
+
+socket.on("joinedGroup", ({
+  groupId,
+  groupName,
+  role,
+  member
+}) => {
+  groupChat[groupId] = {
+    groupName,
+    role,
+    member,
+    message: []
+  };
+  if (document.querySelector('#groupChat')) {
+    document.querySelector('#groupChat').innerHTML += createListChatGroup(groupId);
   }
 })
 
@@ -35,7 +51,8 @@ socket.on("chats", (data) => {
   };
   chatAss[data.from].Message.push({
     from: data.from,
-    messageContent: data.message
+    messageContent: data.message,
+    messageId: data.messageId
   });
   console.log(data);
   const sendBtn = document.querySelector('.sendBtn');

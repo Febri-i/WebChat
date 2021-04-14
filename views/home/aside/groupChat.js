@@ -6,14 +6,14 @@ document.querySelector(".groupchatIcon").addEventListener("click", e => {
 
   if (!document.querySelector('.addGroups')) {
     section.innerHTML += `<div class="addGroups"  onclick="questionGroupMethod()">
-    <img src="./img/light/group_add-white-36dp.svg" alt="Add groups" class="addGroup">
+    <img src="./img/ui/group_add-white-36dp.svg" alt="Add groups" class="addGroup">
     </div>
     <div class="groupMethod" style="height: 45px;">
-    <img src="./img/light/link-white-36dp.svg" alt="Join group" onclick="showLinkGroup()" class="groupLink">
-    <img src="./img/light/group_add-white-36dp.svg" alt="Create group" onclick="createGroup()" class="groupCreate">
+    <img src="./img/ui/link-white-36dp.svg" alt="Join group" onclick="showLinkGroup()" class="groupLink">
+    <img src="./img/ui/group_add-white-36dp.svg" alt="Create group" onclick="createGroup()" class="groupCreate">
     </div>
     <form onsubmit="joinGroup(event)" class="joinGroup">
-      <input type="image" class="propeller" style="opacity: 0; " src="./img/light/done-white-18dp.svg">
+      <input type="image" class="propeller" style="opacity: 0; " src="./img/ui/done-white-18dp.svg">
       <input type="text" class="linkGroup" name="linkGroup">
     </form>
     `;

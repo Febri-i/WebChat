@@ -5,10 +5,10 @@ document.querySelector(".contactIcon").addEventListener("click", ev => {
   }
   if (!document.querySelector('.addContacts')) {
     section.innerHTML += `<div class="addContacts">
-    <img src="./img/light/person_add-white-36dp.svg" onclick="summonAddContactForm()" alt="Add contacts" class="addContact">
+    <img src="./img/ui/person_add-white-36dp.svg" onclick="summonAddContactForm()" alt="Add contacts" class="addContact">
     </div>
     <form onsubmit="addContact(event)" class="addContactForm">
-      <input type="image" class="addContactBtn" style="opacity: 0; " src="./img/light/done-white-18dp.svg">
+      <input type="image" class="addContactBtn" style="opacity: 0; " src="./img/ui/done-white-18dp.svg">
       <input type="text" class="formAddContact">
     </form>
     `

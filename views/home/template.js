@@ -1,42 +1,78 @@
 function chat(id) {
   return `
+  <div class="messageSearchForm">
+    <form class="messageSearchInputer" onsubmit="messageSearchHandler(event)" autocomplete="off" >
+      <input type="text" class="searchMessageInput" name="name">
+      <input type="image" class="searchMessageSubmit" name="search" src="./img/ui/search-white-36dp.svg">
+    </form>
+  </div>
+  <div class="messageOption" style="display: none;" onclick="optChatClicked()">
+  <span class="opt" >Select message</span>
+  <span class="opt" onclick="searchOptHandler()" >Search</span>
+  <span class="opt" >Block</span>
+  <span class="opt" onclick="clearChatHandler()" >Clear</span>
+  <span class="opt" >Mute</span>
+  </div>
   <div class="chatProfileInfo">
   <img src="./pp/profile.jpeg" alt="Photo Profile" onclick="showContactProfile(${id}, event)" class="profile chatProfilePicture">
   <span class="chatProfileName" data-id="${id}" >${getUsrName(id)}</span>
-  <img src="./img/light/menu-black-36dp.svg" alt="Option" class="option">
+  <img src="./img/ui/menu-white-36dp.svg" alt="Option" onclick="chatOPtion(event)" class="option">
   </div>
   <div class="chat">
   </div>
-  <form class="sendingMessage">
+  <form class="sendingMessage" autocomplete="off" >
   <input type="text" name="sendingMessage" class="messageContent">
-  <input type="image" src="./img/light/send-black-36dp.svg" data-id="${parseInt(id)}" onclick="sendMessage(event)" class="sendBtn" alt="Send Message">
-  </form>`;
+  <input type="image" src="./img/ui/send-white-36dp.svg" data-id="${parseInt(id)}" onclick="sendMessage(event)" class="sendBtn" alt="Send Message">
+  </form>
+  `;
 }
 
 function chatGroup(id) {
   let member = "";
   groupChat[id].member.forEach(item => {
-    console.log(item, groupChat[id].member);
     if (item == groupChat[id].member[groupChat[id].member.length - 1]) {
       member += `${getUsrName(item.accountId)}`;
     } else {
       member += `${getUsrName(item.accountId)}, `;
     }
   });
-  return `<div class="chatProfileInfo">
+  return `
+  <div class="messageSearchForm">
+    <form class="messageSearchInputer" onsubmit="messageSearchHandler(event)" autocomplete="off" >
+      <input type="text" class="searchMessageInput" name="name">
+      <input type="image" class="searchMessageSubmit" name="search" src="./img/ui/search-white-36dp.svg">
+    </form>
+  </div>
+  <div class="messageOption" style="display: none;" onclick="optChatClicked()">
+  <span class="opt" >Select message</span>
+  <span class="opt" onclick="searchOptHandler()" >Search</span>
+  <span class="opt" >Block</span>
+  <span class="opt" onclick="clearChatHandler()" >Clear</span>
+  <span class="opt" >Mute</span>
+  </div>
+  <div class="chatProfileInfo">
     <img src="./pp/profile.jpeg" alt="Photo Profile" class="profile chatProfilePicture" />
     <span class="chatProfileName" >${groupChat[id].groupName}<br /> <span class="member">${member}</span></span>
-    <img src="./img/light/menu-black-36dp.svg" alt="Option" class="option" />
+    <img src="./img/ui/menu-white-36dp.svg" alt="Option" class="option" onclick="chatOPtion(event)" />
   </div>
   <div class="chat"></div>
   <form class="sendingMessage">
     <input type="text" name="sendingMessage" class="messageContent" />
-    <input type="image" onclick="sendGroupMessage(this, event)" src="./img/light/send-black-36dp.svg" data-id="${id}" class="sendBtn" alt="Send Message" />
+    <input type="image" onclick="sendGroupMessage(this, event)" src="./img/ui/send-white-36dp.svg" data-id="${id}" class="sendBtn" alt="Send Message" />
   </form>`;
 }
 
+const selectingChat = `<img src="./img/ui/arrow_back_ios-white-36dp.svg" class="cancleSelecting">
+<div class="selectedMessageOption">
+  <img src="./img/ui/reply-white-36dp.svg" class="replyMessage">
+  <img src="./img/ui/content_copy-white-36dp.svg" class="copyMessage">
+  <img src="./img/ui/delete_outline-white-36dp.svg" class="deleteMessage" style="transform: translateX(-1)">
+  <img src="./img/ui/reply-white-36dp.svg" class="continueMessage">
+</div>
+`
+
 function createListContact(profilePict, id) {
-  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="./pp/profile.jpeg" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><img class="deleteContact" onclick="deleteContact(this.dataset.id, event)" data-id="${parseInt(id)}" src="./img/light/delete-black-18dp.svg"></div></div> `;
+  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="./pp/profile.jpeg" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><img class="deleteContact" onclick="deleteContact(this.dataset.id, event)" data-id="${parseInt(id)}" src="./img/ui/delete-white-18dp.svg"></div></div> `;
 }
 
 function createListChat(profilePict, lastChat, id) {
@@ -54,11 +90,15 @@ function createListChatGroup(id) {
 }
 
 
-function createChat(Message, from) {
+function createChat(Message, from, messageId) {
   if (from == id) {
-    return `<div class="usrCht"><span class="chatContent">${Message}</span></div>`;
+    return `
+    <div class="usrCht" id="${messageId}">
+      <span class="chatContent">${Message}</span>
+    </div>
+`;
   } else {
-    return `<div class="oppCht"><span class="chatContent">${Message}</span></div>`;
+    return `<div class="oppCht" id="${messageId}"><span class="chatContent">${Message}</span></div>`;
   }
 }
 
@@ -71,14 +111,14 @@ function createSelectContact(id) {
       </div>`
 }
 
-function createChatGroup(Message, from) {
+function createChatGroup(Message, from, messageId) {
   if (from == id) {
-    return `<div class="usrCht"><span class="chatContent">${Message}</span></div>`;
+    return `<div class="usrCht" id="${messageId}" ><span class="chatContent">${Message}</span></div>`;
   } else {
-    return `<div class="oppCht"><strong>${getUsrName(from)}</strong><span class="chatContent">${Message}</span></div>`;
+    return `<div class="oppCht" id="${messageId}"  ><strong>${getUsrName(from)}</strong><span class="chatContent">${Message}</span></div>`;
   }
 }
-const listContainer = `<form class="searchChat"><input type="text" oninput="searchChat(this)"/><input type="image" src="./img/light/search-black-36dp.svg" alt="Search" /> </form><div id="normalChat" class="listContainer"></div>`;
+const listContainer = `<form class="searchChat"><input type="text" oninput="searchChat(this)"/><input type="image" src="./img/ui/search-white-36dp.svg" alt="Search" /> </form><div id="normalChat" class="listContainer"></div>`;
 
 function createProfile(id, date) {
   return `<div class="mainProfile">
@@ -86,11 +126,11 @@ function createProfile(id, date) {
     <div class="container">
       <div class="usrnamrss">
         <span class="usernamess" data-id="${id}" >${accUserName}</span>
-        <img src="./img/light/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
+        <img src="./img/ui/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
       </div>
       <div class="inputer">
         <input class="inpt" type="text">
-        <img src="./img/light/done-white-18dp.svg" class="changDone" onclick="changeNam(this, true)" style="cursor: pointer">
+        <img src="./img/ui/done-white-18dp.svg" class="changDone" onclick="changeNam(this, true)" style="cursor: pointer">
       </div>
     </div>
     <input type="file" name="pprofile" id="prfileiN" />
@@ -113,11 +153,11 @@ function contactProfile(id) {
   <div class="container">
     <div class="usrnamrss">
       <span class="usernamess" data-id="${id}" >${getUsrName(id)}</span>
-      <img src="./img/light/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
+      <img src="./img/ui/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
     </div>
     <div class="inputer">
       <input class="inpt" type="text">
-      <img src="./img/light/done-white-18dp.svg" class="changDone" onclick="changeNam(this)" data-id="${id}" style="cursor: pointer">
+      <img src="./img/ui/done-white-18dp.svg" class="changDone" onclick="changeNam(this)" data-id="${id}" style="cursor: pointer">
     </div>
   </div>
   </div>
