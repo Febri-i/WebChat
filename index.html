@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<style media="screen">
+* {
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.cropContainer {
+  /* width: 700px; */
+  align-items: center;
+  display: flex;
+  /* background-color: darkgray; */
+  height: 700px;
+  position: relative;
+  width: 400px
+}
+
+.target {
+  width: 100%;
+  /* height: 100%; */
+}
+
+body {
+  overflow: hidden;
+}
+
+.selected {
+  position: absolute;
+  border: 2px solid white;
+  box-shadow: 0px 0px 8px 1px rgba(0,0,0,0.75);
+  -webkit-box-shadow: 0px 0px 8px 1px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 8px 1px rgba(0,0,0,0.75);
+  background-color: rgba(255, 255, 255, 0);
+  cursor: grab;
+  user-select: none;
+}
+
+.corner {
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(50%, 50%);
+  cursor: nwse-resize;
+}
+</style>
+<body>
+  <form  class="submet">
+    <input class="form" onchange="insertImage(this)" type="file" name="file" >
+    <button type="submit" class="click"> upload </button>
+  </form>
+  <div class="cropContainer">
+    <img src="#" class="target" >
+    <!-- <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, .1); filter: brightness(75%);"></div> -->
+    <div class="selected">
+      <div class="corner"></div>
+    </div>
+  </div>
+</body>
+
+<script type="text/javascript">
+
+var reader = new FileReader();
+
+    reader.onload = function(e) {
+      document.querySelector('.target').setAttribute("src", e.target.result)
+      window.addEventListener('load', ev => {
+        const size = document.querySelector(".target").getBoundingClientRect();
+
+        if (size.width < size.height) {
+          document.querySelector('.selected').style.width = `${size.width}px`;
+          document.querySelector('.selected').style.height = `${size.width}px`;
+        } else if (size.width > size.height) {
+          document.querySelector('.selected').style.height = `${size.height}px`;
+          document.querySelector('.selected').style.width = `${size.height}px`;
+        };
+      });
+    }
+
+
+function insertImage(elem) {
+reader.readAsDataURL(elem.files[0])
+}
+
+document.querySelector('.submet').addEventListener('submit', ev => {
+    ev.preventDefault();
+    const selected = document.querySelector('.selected').getBoundingClientRect();
+    const target = document.querySelector('.target');
+    const width = Math.floor(selected.width * (target.naturalHeight / target.offsetHeight));
+
+    fetch('/', {
+      method: 'post',
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        image: reader.result,
+        left:  (selected.offsetLeft - target.offsetLeft) * (target.naturalWidth / target.offsetWidth) ,
+        top:  (selected.offsetTop - target.offsetTop) * (target.naturalHeight / target.offsetHeight),
+        width: width,
+        height: width
+      })
+    // })
+    })
+
+
+  });
+  let mousedown = false;
+  let startMousePos = [];
+  let startElemPos = [];
+
+  document.querySelector('.selected').addEventListener('mousedown', e => {
+    const elemInfo = document.querySelector('.selected');
+    mousedown = true;
+    startElemPos = [elemInfo.offsetLeft, elemInfo.offsetTop]
+    startMousePos = [e.clientX, e.clientY];
+    // console.log(startMousePos);
+    e.target.style.cursor = "grabbing"
+    console.log(mousedown);
+  });
+
+  let corner = false;
+
+  const dataTarget = document.querySelector('.target')
+  const mousemvCb = e => {
+    e.preventDefault();
+    // console.log(mousedown);
+    // if (e.clientX < e.target.offsetLeft || e.clientX > e.target.offsetLeft + e.target.offsetWidth || e.clientY < e.target.offsetTop || e.clientY > e.target.offsetTop + e.target.offsetHeight) mousedown = false;
+    if (mousedown && e.target.classList[0] == "selected" && !corner) {
+      let posX = startElemPos[0] + (e.clientX - startMousePos[0])
+      let posY = startElemPos[1] + (e.clientY - startMousePos[1]);
+      if (posX < dataTarget.offsetLeft) posX = dataTarget.offsetLeft;
+      else if (posX + e.target.offsetWidth > dataTarget.offsetLeft + dataTarget.offsetWidth) posX = dataTarget.offsetWidth - e.target.offsetWidth;
+      if (posY < dataTarget.offsetTop) posY = dataTarget.offsetTop;
+      else if (posY + e.target.offsetHeight > dataTarget.offsetTop + dataTarget.offsetHeight) posY = dataTarget.offsetTop + (dataTarget.offsetHeight - e.target.offsetHeight);
+      e.target.style.left = `${posX}px`;
+      e.target.style.top = `${posY}px`;
+    }else if (corner) {
+          if (e.clientX < cornerMouseStart[0] && e.clientY < cornerMouseStart[1]) {
+            const rataRata = ((cornerMouseStart[0] - e.clientX) + (cornerMouseStart[1] - e.clientY)) / 2;
+            const val = document.querySelector('.selected').offsetWidth - rataRata;
+            document.querySelector('.selected').style.width = val + "px";
+            document.querySelector('.selected').style.height = val + "px";
+          } else if (e.clientX > cornerMouseStart[0] && e.clientY > cornerMouseStart[1]) {
+            const elem = document.querySelector('.selected');
+            const rataRata = ((e.clientX - cornerMouseStart[0]) + (e.clientY - cornerMouseStart[1])) / 2;
+            const val = document.querySelector('.selected').offsetWidth + rataRata + "px";
+            document.querySelector('.selected').style.width = val;
+            document.querySelector('.selected').style.height = val;
+          }
+          cornerMouseStart = [e.clientX, e.clientY]
+        }
+
+  }
+  document.addEventListener('mousemove', mousemvCb)
+
+  document.addEventListener('mouseup', ev => {
+    if (mousedown) mousedown = false;
+    if (corner) corner = false;
+    document.querySelector('.selected').style.cursor = "";
+  });
+
+  let cornerMouseStart = [];
+
+  document.querySelector('.corner').addEventListener('mousedown', e => {
+    corner = true;
+    // document.querySelector('body').style.cursor = "nwse-resize";
+    // document.querySelector('.selected').style.cursor = "nwse-resize"
+    cornerMouseStart = [e.clientX, e.clientY]
+  });
+
+  function crop() {
+    const selected = document.querySelector('.selected');
+    const target = document.querySelector(".target");
+    document.querySelector('h1').innerText = `${selected.offsetLeft - target.offsetLeft}, ${selected.offsetTop - target.offsetTop}`
+  }
+</script>
+</html>

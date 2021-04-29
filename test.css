@@ -1,0 +1,41 @@
+* {
+  margin: 0;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.cropContainer {
+  /* width: 700px; */
+  align-items: center;
+  display: flex;
+  /* background-color: darkgray; */
+  height: 700px;
+  position: relative;
+  width: 400px
+}
+
+.target {
+  width: 100%;
+  /* height: 100%; */
+}
+
+body {
+  overflow: hidden;
+}
+
+.selected {
+  position: absolute;
+  border: 1px solid red;
+  cursor: grab;
+  user-select: none;
+}
+
+.corner {
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}

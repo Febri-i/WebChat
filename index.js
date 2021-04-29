@@ -15,7 +15,12 @@
      pool = require('./pool'),
      uuid = require("uuid").v4,
      server = require("http").Server(app),
-     io = require("socket.io")(server);
+     probe = require('probe-image-size'),
+     io = require("socket.io")(server),
+     buffer = require('buffer/').Buffer,
+     sharp = require('sharp'),
+     fs = require('fs'),
+     FileType = require('file-type');
    pool.connect();
    let eventCollections = {};
    app.use(bodyParser.urlencoded({
@@ -30,7 +35,9 @@
      resave: false,
      saveUninitialized: false
    }));
-   app.use(bodyParser.json());
+   app.use(bodyParser.json({
+     limit: "4mb"
+   }));
    app.use("/", express.static(path.join(__dirname, "views", "home")));
    app.use("/login", express.static(path.join(__dirname, "views", "login")));
    app.use("/register", express.static(path.join(__dirname, "views", "register")));
@@ -42,6 +49,51 @@
        res.render("./login/index.ejs");
      }
    });
+   app.post("/block", async (req, res) => {
+     if (req.session.accountId) {
+       const collection = pool.get().db("message").collection("message");
+
+       const alreadyBlocked = await collection.find({
+         accountId: req.session.accountId,
+         blocking: req.body.id
+       }).toArray();
+       if (!alreadyBlocked.length) {
+         collection.updateOne({
+           accountId: req.body.id
+         }, {
+           $push: {
+             blocked: req.session.accountId
+           }
+         });
+
+         collection.updateOne({
+           accountId: req.session.accountId
+         }, {
+           $push: {
+             blocking: req.body.id
+           }
+         });
+         req.session.blocking.push(req.body.id)
+       } else {
+         collection.updateOne({
+           accountId: req.session.accountId
+         }, {
+           $pull: {
+             blocking: req.body.id
+           }
+         }).then(res => {
+           if (res.result.nModified) collection.updateOne({
+             accountId: req.body.id
+           }, {
+             $pull: {
+               blocked: req.session.accountId
+             }
+           })
+         })
+         req.session.blocking = req.session.blocking.filter((item) => item !== req.body.id)
+       }
+     }
+   })
    app.get("/register", (req, res) => {
      if (req.session.register) {
        res.render("./register/index.ejs", {
@@ -55,6 +107,14 @@
        });
      }
    });
+   app.get("/profile/:id", (req, res) => {
+     if (fs.existsSync(__dirname + "/files/photoprofile/" + req.params.id + ".png")) {
+       res.sendFile(__dirname + "/files/photoprofile/" + req.params.id + ".png");
+     } else {
+       res.sendFile(__dirname + "/files/noProfile.png")
+     }
+   })
+
    app.get("/", async (req, res) => {
      const eventKey = uuid();
      if (req.session.accountId) {
@@ -64,6 +124,7 @@
        const dataAccount = await collection.find({
          accountId: req.session.accountId
        }).toArray();
+       req.session.blocking = dataAccount[0].blocking
        let b = {};
        let admin = false;
        dataAccount[0].contacts.forEach((item, i) => {
@@ -78,7 +139,7 @@
        });
        dataAccount[0].chat = b;
        b = {};
-       for (var i = 0; i < dataAccount[0].groupChat.length; i++) {
+       for (let i = 0; i < dataAccount[0].groupChat.length; i++) {
          item = dataAccount[0].groupChat[i];
          const groupChatData = await groupChatCollection.find({
            groupId: item.groupId
@@ -94,12 +155,49 @@
        res.render("./home/index.ejs", {
          data: dataAccount[0],
          event: eventKey,
-         username: dataAcc.data[0].username
+         username: dataAcc.data[0].username,
+         blocking: dataAccount[0].blocking
        });
      } else {
        res.redirect("/login");
      }
    });
+   app.post("/profile", async (req, res) => {
+     if (req.session.accountId) {
+       if (!req.session.upCount) req.session.upCount = 1;
+       else {
+         req.session.upCount++;
+       }
+       if (req.session.upCount <= 10) {
+         const imgBuffer = buffer.from(req.body.image.replace(/^data:image\/[a-z]+;base64,/, ""), "base64");
+         if (imgBuffer) {
+           const typeFile = await FileType.fromBuffer(imgBuffer);
+           sharp(imgBuffer).extract({
+               width: parseInt(req.body.width),
+               height: parseInt(req.body.height),
+               left: parseInt(req.body.left),
+               top: parseInt(req.body.top)
+             }).toFile(`./files/photoprofile/${req.session.accountId}.${typeFile.ext}`)
+             .then(function (new_file_info) {
+               res.json({
+                 success: true,
+                 src: `./files/photoprofile/${req.session.accountId}.${typeFile.ext}`
+               })
+             })
+             .catch(function (err) {
+               console.log(err);
+               res.json({
+                 success: false,
+                 err: "Something wrong i can feel it"
+               })
+             });
+         }
+       } else res.json({
+         success: false,
+         err: "Can you just do it tomorrow? you've change your profile " + req.session.upCount + "times just today"
+       })
+     }
+   })
    app.post('/contact', async (req, res) => {
      if (req.session.id) {
        if (req.body.username && req.body.accountId) {
@@ -148,44 +246,49 @@
    app.post("/login", async (req, res) => {
      if (req.body.email && req.body.password) {
        const dataAccount = await query(`SELECT password, id, verifStatus, username, email FROM account WHERE email='${req.body.email}'`);
-       if (dataAccount.data[0] && await bcrypt.compare(req.body.password, dataAccount.data[0].password) && parseInt(dataAccount.data[0].verifStatus)) {
-         const collection = pool.get().db("message").collection("message");
-         req.session.accountId = dataAccount.data[0].id;
-         const dataMongo = await collection.find({
-           accountId: dataAccount.data[0].id,
-         }).toArray();
-         let listGroup = {};
-         for (var i = 0; i < dataMongo[0].groupChat.length; i++) {
-           const item = dataMongo[0].groupChat[i];
-           const collection = pool.get().db("message").collection("group");
-           const dataGroupChat = await collection.find({
-             groupId: item.groupId
+       if (dataAccount.data[0]) {
+         if (await bcrypt.compare(req.body.password, dataAccount.data[0].password) && parseInt(dataAccount.data[0].verifStatus)) {
+           const collection = pool.get().db("message").collection("message");
+           req.session.accountId = dataAccount.data[0].id;
+           const dataMongo = await collection.find({
+             accountId: dataAccount.data[0].id,
            }).toArray();
-           listGroup[item.groupId] = dataGroupChat[0].roomKey;
-         }
-         req.session.groupChat = listGroup;
-         res.json({
-           success: true,
-           redir: '/'
-         });
-       } else if (dataAccount.data[0] && !parseInt(dataAccount.data[0].verifStatus)) {
-         req.session.register = {
-           email: dataAccount.data[0].email,
-           password: dataAccount.data[0].password,
-           username: dataAccount.data[0].username
-         }
-         res.json({
-           success: true,
-           redir: '/register'
-         });
-       } else if (eventCollections[dataAccount.data[0].id]) {
-         res.json({
+           let listGroup = {};
+           for (let i = 0; i < dataMongo[0].groupChat.length; i++) {
+             const item = dataMongo[0].groupChat[i];
+             const collection = pool.get().db("message").collection("group");
+             const dataGroupChat = await collection.find({
+               groupId: item.groupId
+             }).toArray();
+             listGroup[item.groupId] = dataGroupChat[0].roomKey;
+           }
+           req.session.groupChat = listGroup;
+           res.json({
+             success: true,
+             redir: '/'
+           });
+         } else if (!parseInt(dataAccount.data[0].verifStatus)) {
+           req.session.register = {
+             email: dataAccount.data[0].email,
+             password: dataAccount.data[0].password,
+             username: dataAccount.data[0].username
+           }
+           res.json({
+             success: true,
+             redir: '/register'
+           });
+         } else if (eventCollections[dataAccount.data[0].id]) {
+           res.json({
+             success: false,
+             err: 'No multiple login'
+           })
+         } else res.json({
            success: false,
-           err: 'No multiple login'
+           err: 'Wrong password'
          })
        } else res.json({
          success: false,
-         err: 'Wrong password'
+         err: "Email not found!"
        })
      }
    });
@@ -323,7 +426,7 @@
        }).then(async ress => {
          let success = false;
          if (ress.result.nModified) {
-           for (var i = 0; i < req.body.member.length; i++) {
+           for (let i = 0; i < req.body.member.length; i++) {
              const item = req.body.member[i]
              if (item !== req.session.accountId) {
                members.push({
@@ -363,7 +466,7 @@
          })
          if (success) {
            let groupMember = [req.session.accountId, ...req.body.member];
-           for (var i = 0; i < groupMember.length; i++) {
+           for (let i = 0; i < groupMember.length; i++) {
              const socketId = eventCollections[groupMember[i]];
              if (socketId) {
                let role = "member";
@@ -448,12 +551,18 @@
      const collection = await pool.get().db("message").collection("message");
      const cookieString = socket.request.headers.cookie;
      const cookieParsed = cookie.parse(cookieString);
-     let listRoom;
      const sidParsed = cookieParser.signedCookie(cookieParsed.session, "secret");
      await MemoryStore.get(sidParsed, async (err, dataSession) => {
        if (err) console.log(err);
+       //IF LOGGED IN
        if (dataSession) {
-         listRoom = dataSession.groupChat;
+         let listRoom = dataSession.groupChat;
+         let blocked;
+         const checkBlocked = await collection.find({
+           accountId: dataSession.accountId
+         }).toArray();
+         blocked = checkBlocked[0].blocked;
+         delete checkBlocked;
          if (dataSession.groupChat) {
            Object.keys(dataSession.groupChat).forEach((item) => {
              socket.join(dataSession.groupChat[item]);
@@ -464,102 +573,116 @@
          ////////////SENDING CHAT/////////////
          //Group chat
          socket.on('groupChat', async data => {
-           if (!listRoom[data.groupId]) {
-             const rooms = await pool.get().db("message").collection("group").find({
-               groupId: data.groupId,
-               "member.accountId": dataSession.accountId
-             }).toArray();
-             listRoom[rooms[0].groupId] = rooms[0].roomKey
-           };
-           if (listRoom[data.groupId]) {
-             socket.to(listRoom[data.groupId]).broadcast.emit('groupChat', {
-               groupId: data.groupId,
-               from: dataSession.accountId,
-               message: data.messageContent,
-               messageId: data.messageId
-             });
-             collection.updateMany({
-               "groupChat.groupId": data.groupId
-             }, {
-               $push: {
-                 "groupChat.$.message": {
-                   from: dataSession.accountId,
-                   messageContent: data.messageContent,
-                   messageId: data.messageId
+           if (data.messageContent.length && data.messageId) {
+             const message = escape(data.messageContent.trim())
+             if (!listRoom[data.groupId]) {
+               const rooms = await pool.get().db("message").collection("group").find({
+                 groupId: data.groupId,
+                 "member.accountId": dataSession.accountId
+               }).toArray();
+               listRoom[rooms[0].groupId] = rooms[0].roomKey
+             };
+             if (listRoom[data.groupId]) {
+               socket.to(listRoom[data.groupId]).broadcast.emit('groupChat', {
+                 groupId: data.groupId,
+                 from: dataSession.accountId,
+                 message: message,
+                 messageId: data.messageId
+               });
+               collection.updateMany({
+                 "groupChat.groupId": data.groupId
+               }, {
+                 $push: {
+                   "groupChat.$.message": {
+                     from: dataSession.accountId,
+                     messageContent: message,
+                     messageId: data.messageId
+                   }
                  }
-               }
-             })
+               })
+             }
            }
          })
 
+
          //Normal chat
          socket.on('chat', async data => {
-           if (eventCollections[data.to]) io.to(eventCollections[data.to]).emit(`chats`, {
-             from: dataSession.accountId,
-             message: data.message,
-             messageId: data.messageId
-           });
-           const checkMsgTo = await collection.find({
-             accountId: data.to
-           }).toArray();
-           if (checkMsgTo[0]) {
-             collection.updateOne({
+           if (!blocked.includes(data.to)) {
+             const temp = await collection.find({
                accountId: dataSession.accountId,
-               'chat.accountId': data.to
-             }, {
-               $push: {
-                 "chat.$.Message": {
-                   from: dataSession.accountId,
-                   messageContent: data.message,
-                   messageId: data.messageId
-                 }
-               }
-             }).then(result => {
-               if (!result.result.nModified)
-                 collection.updateOne({
-                   accountId: dataSession.accountId
-                 }, {
-                   $push: {
-                     chat: {
-                       accountId: data.to,
-                       Message: [{
-                         from: dataSession.accountId,
-                         messageContent: data.message,
-                         messageId: data.messageId
-                       }]
-                     }
+               blocked: data.to
+             }).toArray();
+             if (temp[0]) blocked = temp[0].blocked;
+           }
+           if (data.message.length && data.messageId && !blocked.includes(data.to) && !dataSession.blocking.includes(data.to)) {
+             const message = escape(data.message.trim())
+             if (eventCollections[data.to]) io.to(eventCollections[data.to]).emit(`chats`, {
+               from: dataSession.accountId,
+               message: message,
+               messageId: data.messageId
+             });
+             const checkMsgTo = await collection.find({
+               accountId: data.to
+             }).toArray();
+             if (checkMsgTo[0]) {
+               collection.updateOne({
+                 accountId: dataSession.accountId,
+                 'chat.accountId': data.to
+               }, {
+                 $push: {
+                   "chat.$.Message": {
+                     from: dataSession.accountId,
+                     messageContent: message,
+                     messageId: data.messageId
                    }
-                 })
-             })
+                 }
+               }).then(result => {
+                 if (!result.result.nModified)
+                   collection.updateOne({
+                     accountId: dataSession.accountId
+                   }, {
+                     $push: {
+                       chat: {
+                         accountId: data.to,
+                         Message: [{
+                           from: dataSession.accountId,
+                           messageContent: message,
+                           messageId: data.messageId
+                         }]
+                       }
+                     }
+                   })
+               })
 
-             collection.updateOne({
-               accountId: data.to,
-               'chat.accountId': dataSession.accountId
-             }, {
-               $push: {
-                 "chat.$.Message": {
-                   from: dataSession.accountId,
-                   messageContent: data.message,
-                   messageId: data.messageId
-                 }
-               }
-             }).then(result => {
-               if (!result.result.nModified)
-                 collection.updateOne({
-                   accountId: data.to
-                 }, {
-                   $push: {
-                     chat: {
-                       accountId: dataSession.accountId,
-                       Message: [{
-                         from: dataSession.accountId,
-                         messageContent: data.message,
-                         messageId: data.messageId
-                       }]
-                     }
+               collection.updateOne({
+                 accountId: data.to,
+                 'chat.accountId': dataSession.accountId
+               }, {
+                 $push: {
+                   "chat.$.Message": {
+                     from: dataSession.accountId,
+                     messageContent: message,
+                     messageId: data.messageId
                    }
-                 })
-             })
+                 }
+               }).then(result => {
+                 if (!result.result.nModified)
+                   collection.updateOne({
+                     accountId: data.to
+                   }, {
+                     $push: {
+                       chat: {
+                         accountId: dataSession.accountId,
+                         Message: [{
+                           from: dataSession.accountId,
+                           messageContent: message,
+                           messageId: data.messageId
+                         }]
+                       }
+                     }
+                   })
+               })
+             }
            }
          })
        } else socket.disconnect();

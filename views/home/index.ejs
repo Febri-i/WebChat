@@ -15,12 +15,10 @@
   const event = "<%= event %>"
   const accUserName = "<%= username %>"
   const id = <%- JSON.stringify(data.accountId) %>
-  let groupChat = {};
-  groupChat = <%- JSON.stringify(data.groupChat) %>
-  let contacts = {};
-  contacts = <%- JSON.stringify(data.contacts) %>
-  let chatAss = {};
-  chatAss = <%- JSON.stringify(data.chat) %>
+  let groupChat = <%- JSON.stringify(data.groupChat) %>
+  let contacts = <%- JSON.stringify(data.contacts) %>
+  let chatAss = <%- JSON.stringify(data.chat) %>
+  let blocking = <%- JSON.stringify(data.blocking) %>
 </script>
 <body>
   <aside>

@@ -124,6 +124,7 @@ main {
   height: 100vh;
   border-left: 1px solid rgba(0, 0, 0, 0.3);
   background-color: rgb(54, 57, 63);
+  position: relative;
 }
 
 aside img:hover {
@@ -334,56 +335,6 @@ aside img:hover {
   align-items: center;
   height: 62px;
   background-color: rgb(44, 47, 53);
-}
-
-.usrCht {
-  -ms-flex-item-align: end;
-  align-self: flex-end;
-  display: -webkit-box;
-  background-color: white;
-  transition: .15s;
-}
-
-.usrCht,
-.oppCht {
-  cursor: pointer;
-  height: -webkit-fit-content;
-  height: -moz-fit-content;
-  height: fit-content;
-  border-radius: 10px;
-  padding: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  margin: 10px;
-  width: -webkit-fit-content;
-  width: -moz-fit-content;
-  width: fit-content;
-  background-color: rgb(74, 77, 83);
-  max-width: 60%;
-  animation-duration: .5s;
-  animation-fill-mode: forwards;
-  transition: .4s;
-}
-
-.oppCht strong {
-  font-family: opnsans;
-  color: rgb(204, 207, 213);
-  font-size: 12px;
-}
-
-.oppCht {
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-  -ms-flex-direction: column;
-  flex-direction: column;
-  -ms-flex-item-align: start;
-  align-self: flex-start;
-}
-
-.oppCht span {
-  font-family: opnsans;
 }
 
 .messageContent {
@@ -1180,7 +1131,7 @@ form.addContactForm input[type=image]:hover {
   box-shadow: 0 0 3px rgb(37 39 44);
   border-radius: 0 0 15px 15px;
   left: 50%;
-  transform: translateX(50%);
+  transform: translateX(-50%);
   top: -10px;
   padding: 0px 10px 10px;
   display: flex;
@@ -1212,4 +1163,199 @@ form.messageSearchInputer {
 .messageSearchInputer input[type="image"] {
   height: 30px;
   margin-left: 5px;
+}
+
+* {
+  padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.oppChat, .usrChat {
+  max-width: 40%;
+  width: fit-content;
+  position: relative;
+  width: fit-content;
+  min-width: 25px;
+  margin: 10px
+}
+
+.usrChat {
+  align-self: flex-end;
+}
+
+.messageInPlaceOpt {
+  transition: .3s;
+  position: absolute;
+  top: calc(50% - 15px);
+  bottom: calc(50% - 15px);
+  right: 1px;
+  left: 1px;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: rgb(69, 72, 78);
+  box-shadow: 0 0 10px rgb(40, 45, 54);
+}
+
+.messageInPlaceOpt img {
+  height: 30px;
+}
+
+.oppChat .chtContainer, .usrChat .chtContainer {
+  animation-duration: .25s;
+  animation-fill-mode: forwards;
+  z-index: 9;
+  position: relative;
+  border-radius: 10px;
+  padding: 7px;
+  width: 100%;
+  align-self: flex-end;
+  background-color: rgb(74, 77, 83);
+  color: rgb(204, 207, 213);
+  box-shadow: 0 0 10px rgb(40, 45, 54);
+}
+
+.profileOpt img {
+  margin: 5px;
+  transition: .2s;
+  cursor: pointer;
+}
+
+.profileOpt img:hover {
+  transform: scale(1.2);
+}
+
+.fileInputer {
+  display: none !important;
+}
+
+.profileContainer:hover .profileOpt {
+  opacity: 1;
+}
+
+@keyframes opaFadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes opaFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.profileOpt {
+  width: 124px;
+  height: 124px;
+  position: absolute;
+  opacity: 0;
+  transition: .3s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 50vh;
+}
+
+.profileContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50vh;
+}
+
+.oppChat .chtContainer span, .usrChat .chtContainer span {
+  overflow-wrap: break-word;
+  font-family: opnsans;
+}
+
+.showProfile {
+  position: absolute;
+  top: 0;
+  animation-name: opaFadeIn;
+  animation-duration: .2s;
+  animation-fill-mode: forwards;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(16, 17, 21, .7);
+}
+
+img.backFromShow {
+  margin: 1.5vh 20px;
+}
+
+img.bigProfile {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 85vh;
+  width: 85vh;
+}
+
+.ppreview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(16, 17, 21, .7);
+  animation-name: opaFadeIn;
+  animation-duration: .2s;
+  animation-fill-mode: forwards;
+}
+
+.backDonePP {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 15px;
+}
+
+.cropImage {
+  width: 100%;
+  height: 100%;
+  padding: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selected {
+  position: absolute;
+  border: 3px solid white;
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0);
+}
+
+.corner {
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  position: absolute;
+  right: 0;
+  transform: translate(50%, 50%);
+  bottom: 0;
+}
+
+.blockId {
+  font-family: opnsans;
+  font-weight: bold;
+  color: rgb(204, 207, 213);
+  margin: auto;
 }

@@ -1,4 +1,9 @@
 function chat(id) {
+  const isBlocked = blocking.includes(parseInt(id));
+  const block = isBlocked ? `<span class="blockId" data-id="${id}"> You blocked this account! Unblock if you want to message</span>` : `<input type="text" name="sendingMessage" class="messageContent">
+  <input type="image" src="./img/ui/send-white-36dp.svg" data-id="${parseInt(id)}" onclick="sendMessage(event)" class="sendBtn" alt="Send Message">
+  `;
+  const unOrBlock = isBlocked ? "Unblock" : "Block"
   return `
   <div class="messageSearchForm">
     <form class="messageSearchInputer" onsubmit="messageSearchHandler(event)" autocomplete="off" >
@@ -9,20 +14,18 @@ function chat(id) {
   <div class="messageOption" style="display: none;" onclick="optChatClicked()">
   <span class="opt" >Select message</span>
   <span class="opt" onclick="searchOptHandler()" >Search</span>
-  <span class="opt" >Block</span>
+  <span class="opt blockOpt" onclick="blockContact() ">${unOrBlock}</span>
   <span class="opt" onclick="clearChatHandler()" >Clear</span>
-  <span class="opt" >Mute</span>
   </div>
   <div class="chatProfileInfo">
-  <img src="./pp/profile.jpeg" alt="Photo Profile" onclick="showContactProfile(${id}, event)" class="profile chatProfilePicture">
+  <img src="http://localhost:2020/profile/${id}" alt="Photo Profile" onclick="showContactProfile(${id}, event)" class="profile chatProfilePicture">
   <span class="chatProfileName" data-id="${id}" >${getUsrName(id)}</span>
   <img src="./img/ui/menu-white-36dp.svg" alt="Option" onclick="chatOPtion(event)" class="option">
   </div>
   <div class="chat">
   </div>
   <form class="sendingMessage" autocomplete="off" >
-  <input type="text" name="sendingMessage" class="messageContent">
-  <input type="image" src="./img/ui/send-white-36dp.svg" data-id="${parseInt(id)}" onclick="sendMessage(event)" class="sendBtn" alt="Send Message">
+  ${block}
   </form>
   `;
 }
@@ -46,12 +49,10 @@ function chatGroup(id) {
   <div class="messageOption" style="display: none;" onclick="optChatClicked()">
   <span class="opt" >Select message</span>
   <span class="opt" onclick="searchOptHandler()" >Search</span>
-  <span class="opt" >Block</span>
   <span class="opt" onclick="clearChatHandler()" >Clear</span>
-  <span class="opt" >Mute</span>
   </div>
   <div class="chatProfileInfo">
-    <img src="./pp/profile.jpeg" alt="Photo Profile" class="profile chatProfilePicture" />
+    <img src="http://localhost:2020/profile/${id}" alt="Photo Profile" class="profile chatProfilePicture" />
     <span class="chatProfileName" >${groupChat[id].groupName}<br /> <span class="member">${member}</span></span>
     <img src="./img/ui/menu-white-36dp.svg" alt="Option" class="option" onclick="chatOPtion(event)" />
   </div>
@@ -72,11 +73,11 @@ const selectingChat = `<img src="./img/ui/arrow_back_ios-white-36dp.svg" class="
 `
 
 function createListContact(profilePict, id) {
-  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="./pp/profile.jpeg" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><img class="deleteContact" onclick="deleteContact(this.dataset.id, event)" data-id="${parseInt(id)}" src="./img/ui/delete-white-18dp.svg"></div></div> `;
+  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="http://localhost:2020/profile/${id}" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><img class="deleteContact" onclick="deleteContact(this.dataset.id, event)" data-id="${parseInt(id)}" src="./img/ui/delete-white-18dp.svg"></div></div> `;
 }
 
 function createListChat(profilePict, lastChat, id) {
-  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="./pp/profile.jpeg" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><span class="lastChat">${lastChat}</span></div></div> `;
+  return `<div class="list" id="${id}" onclick="addMessage(this.id)"><img src="http://localhost:2020/profile/${id}" onclick="showContactProfile(${id}, event)" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${getUsrName(id)}</span><span class="lastChat">${lastChat}</span></div></div> `;
 }
 
 function createListChatGroup(id) {
@@ -86,25 +87,44 @@ function createListChatGroup(id) {
       return `${sender}: ${groupChat[id].message[groupChat[id].message.length - 1].messageContent}`;
     } else return "";
   }
-  return `<div class="list" id="${id}" onclick="addMessageGroup(this.id)"><img src="./pp/profile.jpeg" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${groupChat[id].groupName}</span><span class="lastChatGroup">${lastMessage()}</span></div></div> `;
+  return `<div class="list" id="${id}" onclick="addMessageGroup(this.id)"><img src="http://localhost:2020/profile/${id}" alt="Photo Profile" class="profile clPhotoProfile" /><div class="listInfo"><span class="username">${groupChat[id].groupName}</span><span class="lastChatGroup">${lastMessage()}</span></div></div> `;
 }
 
 
 function createChat(Message, from, messageId) {
   if (from == id) {
     return `
-    <div class="usrCht" id="${messageId}">
-      <span class="chatContent">${Message}</span>
-    </div>
+    <div class="usrChat" id="${messageId}" ondblclick="rightMessageDb(this)">
+      <div class="chtContainer">
+        <span class="messageText">${Message}</span>
+      </div>
+      <div class="messageInPlaceOpt">
+        <img src="./img/ui/reply-white-36dp.svg">
+        <img src="./img/ui/content_copy-white-36dp.svg">
+        <img src="./img/ui/delete_outline-white-36dp.svg">
+        <img src="./img/ui/reply-white-36dp.svg" style="transform: scaleX(-1)">
+      </div>
+  </div>
 `;
   } else {
-    return `<div class="oppCht" id="${messageId}"><span class="chatContent">${Message}</span></div>`;
+    return `
+    <div class="oppChat" id="messageId" ondblclick="leftMessageDb(this)">
+      <div class="chtContainer">
+        <span class="messageText">${Message}</span>
+      </div>
+      <div class="messageInPlaceOpt" style="justify-content: flex-end;" >
+        <img src="./img/ui/reply-white-36dp.svg">
+        <img src="./img/ui/delete_outline-white-36dp.svg">
+        <img src="./img/ui/content_copy-white-36dp.svg">
+        <img src="./img/ui/reply-white-36dp.svg" style="transform: scaleX(-1)">
+      </div>
+    </div>`;
   }
 }
 
 function createSelectContact(id) {
   return `<div class="list" id="${id}" onclick="addContactToList(this)">
-        <img src="./pp/profile.jpeg" alt="Photo Profile" class="profile clPhotoProfile" />
+        <img src="http://localhost:2020/profile/${id}" alt="Photo Profile" class="profile clPhotoProfile" />
         <div class="listInfo">
           <span class="username">${getUsrName(id)}</span>
         </div>
@@ -122,15 +142,22 @@ const listContainer = `<form class="searchChat"><input type="text" oninput="sear
 
 function createProfile(id, date) {
   return `<div class="mainProfile">
-    <img src="./pp/profile.jpeg" class="aclPhotoProfile" alt="Photo Profile" />
-    <div class="container">
+  <input type="file" onchange="cropInputed(this)" class="fileInputer" >
+  <div class="profileContainer">
+    <div class="profileOpt">
+      <img src="./img/ui/fullscreen_white_24dp.svg" onclick="fullScreenPP()" class="fullScrProf">
+      <img src="./img/ui/edit_white_24dp.svg" onclick="cropHandler()" class="cropProf">
+    </div>
+      <img src="http://localhost:2020/profile/${id}" class="aclPhotoProfile" alt="Photo Profile" />
+  </div>
+<div class="container">
       <div class="usrnamrss">
         <span class="usernamess" data-id="${id}" >${accUserName}</span>
         <img src="./img/ui/edit-white-18dp.svg" class="changEd" style="cursor: pointer" onclick="changeUsrnam()">
       </div>
       <div class="inputer">
         <input class="inpt" type="text">
-        <img src="./img/ui/done-white-18dp.svg" class="changDone" onclick="changeNam(this, true)" style="cursor: pointer">
+        <img src="./img/ui/done_white_36dp.svg" class="changDone" onclick="changeNam(this, true)" style="cursor: pointer">
       </div>
     </div>
     <input type="file" name="pprofile" id="prfileiN" />
@@ -149,7 +176,7 @@ function createProfile(id, date) {
 
 function contactProfile(id) {
   return `<div class="mainProfile">
-  <img src="./pp/profile.jpeg" class="aclPhotoProfile" alt="Photo Profile">
+  <img src="http://localhost:2020/profile/${id}" class="aclPhotoProfile" onclick="fullScreenPP()" alt="Photo Profile">
   <div class="container">
     <div class="usrnamrss">
       <span class="usernamess" data-id="${id}" >${getUsrName(id)}</span>
